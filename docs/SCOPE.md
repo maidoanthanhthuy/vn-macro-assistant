@@ -158,5 +158,5 @@ embeddings, so deployment needs a single database container.
 
 - [x] All data sources pass a smoke test (data actually downloads for Vietnam)
 - [x] Ticker list and indicator list confirmed
-- [ ] 20 seed questions reviewed; each is answerable with in-scope data
+- [ ] Seed questions reviewed; each is answerable with in-scope data
 - [x] Repository skeleton created
