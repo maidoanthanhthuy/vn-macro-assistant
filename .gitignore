@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Secrets
+.env
+
+# Data and models (too large / private for git)
+data/
+models/
+*.pkl
+*.joblib
+*.h5
+mlruns/

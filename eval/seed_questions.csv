@@ -1,0 +1,23 @@
+id,question,type,expected_tool,answer_source,notes
+q01,Giá đóng cửa của VN-Index ngày cuối cùng giao dịch năm 2025 là bao nhiêu?,numeric,sql,stock_prices,Single value lookup
+q02,Cổ phiếu FPT tăng hay giảm bao nhiêu phần trăm trong năm 2025?,numeric,sql,stock_prices,Close-to-close return
+q03,"Trong nhóm ngân hàng VCB, BID, CTG, TCB, MBB, VPB, mã nào tăng mạnh nhất năm 2024?",numeric,sql,stock_prices,Ranking across tickers
+q04,Tăng trưởng GDP của Việt Nam năm 2023 theo World Bank là bao nhiêu?,numeric,sql,macro_indicators,Annual macro value
+q05,Lạm phát bình quân của Việt Nam giai đoạn 2019-2023 là bao nhiêu?,numeric,sql,macro_indicators,Average over years
+q06,Khối lượng giao dịch trung bình mỗi ngày của HPG trong quý 1 năm 2025 là bao nhiêu?,numeric,sql,stock_prices,Aggregation over a quarter
+q07,Tháng nào trong năm 2024 VN-Index giảm mạnh nhất?,numeric,sql,stock_prices,Monthly returns then ranking
+q08,So sánh tăng trưởng GDP và lạm phát của Việt Nam từ 2020 đến 2024.,numeric,sql,macro_indicators,Two series side by side
+q09,Báo cáo kinh tế - xã hội tháng gần nhất nói gì về lạm phát?,interpretation,rag,nso_monthly_report,"Latest month = latest report in DB"
+q10,Vì sao chỉ số giá tiêu dùng tháng 6/2026 giảm so với tháng trước?,interpretation,rag,nso_cpi_release,Reason stated in the release
+q11,NHNN đưa ra lý do gì khi giảm lãi suất điều hành trong năm 2023?,interpretation,rag,sbv_press_release,Policy reasoning
+q12,Báo cáo 6 tháng đầu năm 2026 đánh giá tăng trưởng GDP như thế nào?,interpretation,rag,nso_monthly_report,Assessment from report
+q13,Tình hình xuất khẩu được mô tả thế nào trong báo cáo tháng 8/2026?,interpretation,rag,nso_monthly_report,Section-level retrieval
+q14,NHNN định hướng điều hành tín dụng năm 2026 ra sao?,interpretation,rag,sbv_press_release,Policy direction
+q15,VN-Index biến động thế nào trong 3 tháng sau lần đầu NHNN giảm lãi suất năm 2023?,hybrid,sql+rag,policy_events + stock_prices + sbv_press_release,Event date from policy_events; return from stock_prices
+q16,Lạm phát tháng gần nhất là bao nhiêu và cổ phiếu ngân hàng biến động ra sao trong tháng đó?,hybrid,sql+rag,nso_cpi_release + stock_prices,Number from report; market move from SQL
+q17,Năm 2022 NHNN tăng lãi suất mấy lần và VN-Index giảm bao nhiêu trong năm đó?,hybrid,sql+rag,policy_events + stock_prices + sbv_press_release,Count events and compute annual return
+q18,Tôi có nên mua cổ phiếu VCB tuần sau không?,out_of_scope,none,none,Investment advice: must decline
+q19,Giá vàng SJC hôm nay là bao nhiêu?,out_of_scope,none,none,No gold data: must decline
+q20,Lợi nhuận quý 3 năm 2026 của Vinamilk là bao nhiêu?,out_of_scope,none,none,Financial statements not in scope: must decline
+q21,"Theo IMF, tăng trưởng GDP của Việt Nam năm 2027 dự kiến là bao nhiêu?",numeric,sql,macro_indicators,"Must label as IMF forecast and name WEO vintage"
+q22,"GDP Việt Nam năm 2028 sẽ tăng bao nhiêu?",numeric,sql,macro_indicators,"No source named by user: answer only as IMF forecast, never as fact"
