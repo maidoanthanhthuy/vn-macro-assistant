@@ -8,6 +8,8 @@ Status: smoke-tested on 2026-11-09 (see "Smoke test results" at the end). Script
 - vnstock and vnai are quarantined on PyPI pending a security review. Do not install vnstock
   by any other route (GitHub, custom installer) until that review is finished.
 - Prices are fetched directly from the KBS API (primary) or the Vietcap API (fallback).
+  Vietcap is also the cross-check source for index data (indices only, never merged into
+  the main data; see "Reference sources").
   Both are unofficial, undocumented APIs that may change without notice, with unclear terms
   of use. Use them for learning purposes only.
 - Fetch once, save a snapshot to `data/raw/` (gitignored), and never commit raw data.
@@ -74,7 +76,8 @@ Daily OHLCV history, `POST` request:
 
 ## Open questions for the smoke test
 
-KBS answers are from the 2026-11-09 smoke test; Vietcap is not tested yet.
+KBS answers are from the 2026-11-09 smoke test. Vietcap was tested for indices only on
+2026-11-10 (see "Vietcap index cross-check").
 
 - [ ] Adjusted or unadjusted? KBS: **probably adjusted** (no FPT daily move beyond +/-7%
       in ten years). Still to confirm with the bonus-share check below.
@@ -100,14 +103,32 @@ KBS answers are from the 2026-11-09 smoke test; Vietcap is not tested yet.
      scaled down by the same factor.
 4. Record the result (ticker, ex-rights date, ratio, observed prices, verdict) here and
    in the snapshot metadata. Repeat the same check for Vietcap if it is used.
-5. Cross-check the closes around that date against the Mendeley reference dataset below.
+5. There is no independent reference for stock prices yet: Vietcap is not used to check
+   stocks because its price adjustment method may differ from KBS.
 
-## Reference dataset (validation only)
+## Reference sources (validation only)
 
-Mendeley Data, "Unrewarded but Amplified": https://data.mendeley.com/datasets/8584zp8rtr/1
+### Vietcap: cross-check for index data
 
-Used only to cross-check closing prices for 2015-2024. It is not a primary source.
-Check its license and price adjustment method before comparing.
+- Used only to check the KBS index series (VNINDEX, VN30, HNXINDEX). Not used for stock
+  prices, because the price adjustment method may differ between the two sources.
+- Vietcap numbers are never merged into the main data; KBS stays the primary source.
+- Fetcher: `src/vnmacro/ingest/fetch_vietcap.py`; raw responses in
+  `data/external/vietcap/<snapshot date>/`. Results: see "Vietcap index cross-check".
+
+### Mendeley: rejected
+
+Mendeley Data, "Unrewarded but Amplified" (https://data.mendeley.com/datasets/8584zp8rtr/1,
+CC BY 4.0, raw data from Vietstock) was downloaded on 2026-11-10 and **is not used as a
+reference**:
+
+- Its `vnindex_daily.csv` does not match the real VN-Index: e.g. 2024-12-31 is 324.41
+  against 1266.78 (KBS), and the ratio to KBS drifts from 1.18 to 5.41 over time.
+- The correlation of daily returns with KBS VNINDEX is 0.02.
+- It has values on days the market was closed (Tet, 1 January, 30 April, 2 September;
+  371 such dates), and the values change on those days.
+- Stock tickers are anonymised (VN001-VN627), and every ticker has a row on every date,
+  so it cannot be used to check specific stocks or trading days.
 
 ## Smoke test results (2026-11-09)
 
@@ -115,7 +136,7 @@ Check its license and price adjustment method before comparing.
 |---|---|---|---|
 | KBS daily prices (stocks) | Yes | Mid-2016 to today (FPT from 2016-09-21, VCB 2016-07-25, HPG 2016-05-25) | No data before mid-2016, so 2015-01 to mid-2016 is missing for stocks. Probably adjusted prices. |
 | KBS daily prices (indices) | Yes | VNINDEX 2015-01-05 to today | Values are sometimes JSON numbers, sometimes strings: always parse as float. |
-| Vietcap (fallback) | Not tested | - | Only needed if KBS fails, or to fill the 2015-2016 stock gap. |
+| Vietcap (fallback) | Yes, indices (tested 2026-11-10) | Indices from 2014 to today | Used as a cross-check for indices. Stocks not tested. |
 | World Bank API | Yes, all 8 codes valid | From 1983-1996 (varies) to 2022-2025 | Latest year differs per indicator (table below). |
 | IMF WEO (SDMX 3.0) | Yes | Real GDP growth 1980-2031 | 2026-2031 are IMF projections. |
 | IMF CPI (SDMX 3.0) | Yes, monthly series exist | Headline CPI index 2001-12 to 2026-09 (y/y change from 2002-12) | 62 monthly Vietnam series, including CPI by COICOP group. |
@@ -136,6 +157,73 @@ Check its license and price adjustment method before comparing.
   bonus-share check above.
 - Extra field `va` (traded value) appears on some rows. The row for the current day may be
   incomplete (`va` missing), so take snapshots after the market close.
+
+### KBS snapshot 2026-11-10 (`src/vnmacro/ingest/fetch_kbs.py`)
+
+- All 18 symbols fetched (48 calls, no errors, no retries). Stocks from 2017-01-03
+  (TCB 2018-06-04, VPB 2017-08-17, VHM 2018-05-17: listed later); indices from 2015-01-05.
+- TCB, VPB and VHM were refetched year by year (fewer rows than weekdays). The yearly
+  totals equal the single-call totals, which confirms **no per-request row cap**.
+- The three indices differ by 1-3 rows (VNINDEX 2,958, VN30 2,956, HNXINDEX 2,959).
+  Dates present in only some of them:
+
+  | Date | VNINDEX | VN30 | HNXINDEX | 15 HOSE stocks |
+  |---|---|---|---|---|
+  | 2016-03-04 | yes | missing | yes | not checked (stocks start 2017) |
+  | 2018-01-23 | missing | missing | yes | all missing |
+  | 2018-01-24 | yes (suspect) | missing | yes | all missing |
+
+- Findings and decisions (confirmed by the Vietcap cross-check below):
+  1. **HOSE did not trade on 2018-01-23 and 2018-01-24** because of a system failure
+     (confirmed from HOSE / SSC announcements reported in the press). HNX traded normally.
+     HOSE resumed trading on 2018-01-25. Sources (VnEconomy):
+     - https://vneconomy.vn/hose-thong-bao-ngung-giao-dich-ngay-23-1-2018.htm
+     - https://vneconomy.vn/hose-tiep-tuc-ngung-giao-dich-ngay-24-1.htm
+     - https://vneconomy.vn/tu-25-1-hose-chinh-thuc-giao-dich-tro-lai.htm
+     - The KBS VNINDEX row for 2018-01-24 is **fake**: its OHLCV is copied from 2018-01-22
+       (o 1066.86, h 1088.05, l 1066.61, c 1087.42, v 246,215,500). Drop it at load time.
+     - The Vietcap rows with volume 0 on these dates are placeholders, not trading days.
+  2. **VNINDEX 2018-01-22:** KBS close 1087.42, Vietcap 1086.51 (0.08% apart). The failure
+     happened during the closing (ATC) session; according to VnEconomy, the close for that
+     day was taken as the last matched price of the day. Which of the two values equals
+     that price is not verified. Keep the KBS value.
+  3. **VN30 2016-03-04:** KBS is missing a real trading day (Vietcap has a normal row:
+     close 580.94, volume 40.5 million). Do not fill it from Vietcap.
+  4. **VNINDEX 2016-03-04:** the KBS volume (121,565,340) is wrong: it repeats 2016-03-03
+     (Vietcap: 131,099,670). The close matches Vietcap (573.65). At load time keep the
+     prices and set the volume to NULL.
+- Handling (at the cleaning / database load step, raw files stay unchanged): apply the
+  decisions above, and add automatic checks for rows whose OHLCV duplicates another date
+  and for dates present in an index but not in the stocks of the same exchange (or the
+  reverse).
+
+### Vietcap index cross-check (2026-11-10, `src/vnmacro/ingest/fetch_vietcap.py`)
+
+- Vietcap symbols: `VNINDEX`, `VN30`, `HNXIndex` (from the vnstock source at commit
+  `71b853f0db`, read only). One request per index, 3,095 rows each (from 2014-06-23);
+  compared from 2015-01-05. No weekend dates in Vietcap.
+- Dates in only one source: none only in KBS. Only in Vietcap: VNINDEX 2018-01-23
+  (placeholder); VN30 2016-03-04 (real row), 2018-01-23 and 2018-01-24 (placeholders).
+  HNXINDEX: none.
+- Close differences on common dates:
+
+  | Index | Common dates | Max difference | Dates above 0.1% |
+  |---|---|---|---|
+  | VNINDEX | 2,958 | 0.33% (2015-10-02) | 5 |
+  | VN30 | 2,956 | 1.24% (2016-02-29) | 17 |
+  | HNXINDEX | 2,959 | 0.82% (2015-03-24) | 18 |
+
+  Dates above 0.1%:
+  - VNINDEX: 2015-10-02, 2018-02-28, 2018-11-13, 2019-03-14, 2019-09-23.
+  - VN30: 2015-10-02, 2016-02-29, 2016-04-22, 2016-11-24, 2017-05-03, 2018-02-22,
+    2018-02-28, 2018-11-13, 2019-03-14, 2019-07-26, 2019-07-29, 2020-03-30, 2020-04-09,
+    2020-09-22, 2020-10-19, 2021-02-08, 2021-03-24.
+  - HNXINDEX: 2015-03-02, 2015-03-19, 2015-03-20, 2015-03-24, 2015-03-25, 2015-03-26,
+    2015-04-08, 2015-04-10, 2015-04-14, 2015-04-20, 2016-03-15, 2016-04-06, 2016-11-28,
+    2017-12-07, 2017-12-26, 2020-01-08, 2021-01-07, 2021-08-20.
+
+  All of them are before 09/2021; since then the two sources match. KBS stays the
+  primary source.
 
 ### World Bank (`scripts/smoke_tests/world_bank.py`)
 
