@@ -158,5 +158,5 @@ embeddings, so deployment needs a single database container.
 
 - [x] All data sources pass a smoke test (data actually downloads for Vietnam)
 - [x] Ticker list and indicator list confirmed
-- [ ] Seed questions reviewed; each is answerable with in-scope data
+- [x] Seed questions reviewed; each is answerable with in-scope data (q11, q15, q17 need the full 2022+ document range, not the MVP 12-month subset)
 - [x] Repository skeleton created
