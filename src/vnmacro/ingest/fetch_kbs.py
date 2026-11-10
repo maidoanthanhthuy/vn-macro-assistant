@@ -17,15 +17,21 @@ import json
 import time
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
 import requests
 
 from vnmacro import config
-
-OK_STATUSES = ("ok", "existing")
+from vnmacro.ingest.common import (
+    OK_STATUSES,
+    HttpSettings,
+    fetch_with_retry,
+    save_new_file,
+    utc_now,
+    write_manifest,
+)
 
 
 @dataclass(frozen=True)
@@ -39,15 +45,12 @@ class Job:
 
 
 @dataclass(frozen=True)
-class FetchSettings:
+class FetchSettings(HttpSettings):
     """HTTP and validation settings for KBS calls."""
 
     base_url: str = config.KBS_BASE_URL
     headers: dict[str, str] = field(default_factory=lambda: dict(config.KBS_HEADERS))
     rows_key: str = config.KBS_ROWS_KEY
-    retries: int = config.KBS_RETRIES
-    pause: float = config.KBS_PAUSE_SECONDS
-    timeout: float = config.KBS_TIMEOUT_SECONDS
     min_ratio: float = config.KBS_MIN_ROW_RATIO
 
 
@@ -153,61 +156,6 @@ def new_manifest(snapshot_date: date, base_url: str) -> dict[str, Any]:
 # ---------- I/O ----------
 
 
-def fetch_with_retry(
-    session: requests.Session,
-    url: str,
-    params: dict[str, str],
-    settings: FetchSettings,
-    sleep: Callable[[float], None] = time.sleep,
-    json_body: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """GET (or POST `json_body`) a JSON URL with retries; pause after each try."""
-    http_status, error = None, None
-    for attempt in range(1, settings.retries + 2):
-        try:
-            if json_body is None:
-                resp = session.get(
-                    url,
-                    params=params,
-                    headers=settings.headers,
-                    timeout=settings.timeout,
-                )
-            else:
-                resp = session.post(
-                    url,
-                    json=json_body,
-                    headers=settings.headers,
-                    timeout=settings.timeout,
-                )
-            http_status = resp.status_code
-            resp.raise_for_status()
-            return {
-                "content": resp.content,
-                "payload": resp.json(),
-                "http_status": http_status,
-                "attempts": attempt,
-                "error": None,
-            }
-        except (requests.RequestException, ValueError) as exc:
-            error = f"{type(exc).__name__}: {exc}"
-        finally:
-            sleep(settings.pause)
-    return {
-        "content": None,
-        "payload": None,
-        "http_status": http_status,
-        "attempts": settings.retries + 1,
-        "error": error,
-    }
-
-
-def save_new_file(path: Path, content: bytes) -> None:
-    """Write bytes to `path`; raise FileExistsError instead of overwriting."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("xb") as f:
-        f.write(content)
-
-
 def get_or_fetch(
     session: requests.Session,
     url: str,
@@ -243,7 +191,7 @@ def get_or_fetch(
         "attempts": res["attempts"],
         "error": res["error"],
         **summary,
-        "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "fetched_at": utc_now(),
     }
     return status, summary, record
 
@@ -296,13 +244,6 @@ def fetch_job(
         **combine_summaries(pieces),
     )
     return entry, calls
-
-
-def write_manifest(path: Path, manifest: dict[str, Any]) -> None:
-    """Write the manifest atomically (temp file, then rename)."""
-    tmp = path.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
-    tmp.replace(path)
 
 
 def run(

@@ -14,7 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Callable
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -22,13 +22,14 @@ from zoneinfo import ZoneInfo
 import requests
 
 from vnmacro import config
-from vnmacro.ingest.fetch_kbs import (
-    FetchSettings,
+from vnmacro.ingest.common import (
+    HttpSettings,
     fetch_with_retry,
     save_new_file,
-    weekdays_between,
+    utc_now,
     write_manifest,
 )
+from vnmacro.ingest.fetch_kbs import weekdays_between
 
 # ---------- pure helpers ----------
 
@@ -78,7 +79,7 @@ def fetch_index(
     end: date,
     out_dir: Path,
     session: requests.Session,
-    settings: FetchSettings,
+    settings: HttpSettings,
     sleep: Callable[[float], None] | None = None,
 ) -> dict[str, Any]:
     """Fetch one index unless its file exists; return its manifest entry."""
@@ -108,7 +109,7 @@ def fetch_index(
         "attempts": res["attempts"],
         "error": res["error"],
         **summary,
-        "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "fetched_at": utc_now(),
     }
 
 
@@ -134,9 +135,7 @@ def main(argv: list[str] | None = None) -> None:
             "endpoint": f"POST {config.VIETCAP_URL}",
             "symbols": {},
         }
-    settings = FetchSettings(
-        base_url=config.VIETCAP_URL, headers=config.VIETCAP_HEADERS
-    )
+    settings = HttpSettings(base_url=config.VIETCAP_URL, headers=config.VIETCAP_HEADERS)
     session = requests.Session()
     for symbol, vc_symbol in config.VIETCAP_INDEX_SYMBOLS.items():
         entry = fetch_index(

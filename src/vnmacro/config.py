@@ -3,6 +3,11 @@
 from datetime import date
 from pathlib import Path
 
+# HTTP defaults for all raw data fetchers
+HTTP_PAUSE_SECONDS = 1.0  # pause after every call
+HTTP_RETRIES = 2  # retries after the first attempt
+HTTP_TIMEOUT_SECONDS = 30.0
+
 # Scope (docs/SCOPE.md, section 2.1)
 STOCK_TICKERS: tuple[str, ...] = (
     "VCB", "BID", "CTG", "TCB", "MBB", "VPB",  # banks
@@ -28,9 +33,6 @@ KBS_HEADERS: dict[str, str] = {
     "Accept": "application/json",
 }
 KBS_ROWS_KEY = "data_day"
-KBS_PAUSE_SECONDS = 1.0
-KBS_RETRIES = 2
-KBS_TIMEOUT_SECONDS = 30.0
 # Rows / weekdays below this ratio -> the call may be capped; refetch year by year.
 KBS_MIN_ROW_RATIO = 0.9
 
@@ -49,6 +51,42 @@ VIETCAP_INDEX_SYMBOLS: dict[str, str] = {
 }
 MARKET_TZ = "Asia/Ho_Chi_Minh"
 
+# World Bank API (docs/SCOPE.md, section 2.1)
+WB_API = "https://api.worldbank.org/v2"
+WB_COUNTRY = "VNM"
+WB_START_YEAR = 2000
+WB_PER_PAGE = 100
+WB_HEADERS: dict[str, str] = {"Accept": "application/json"}
+WB_INDICATORS: dict[str, str] = {
+    "NY.GDP.MKTP.KD.ZG": "GDP growth (annual %)",
+    "FP.CPI.TOTL.ZG": "Inflation, consumer prices (annual %)",
+    "FR.INR.LEND": "Lending interest rate (%)",
+    "PA.NUS.FCRF": "Official exchange rate (VND per USD, period average)",
+    "SL.UEM.TOTL.ZS": "Unemployment (% of labor force)",
+    "BX.KLT.DINV.WD.GD.ZS": "FDI, net inflows (% of GDP)",
+    "NE.EXP.GNFS.ZS": "Exports of goods and services (% of GDP)",
+    "FM.LBL.BMNY.ZG": "Broad money growth (annual %)",
+}
+
+# IMF Data Portal, SDMX 3.0 (docs/data_sources.md). CSV with attributes=all, because
+# series attributes such as LATEST_ACTUAL_ANNUAL_DATA are only returned in that format.
+IMF_API = "https://api.imf.org/external/sdmx/3.0"
+IMF_HEADERS: dict[str, str] = {"Accept": "application/vnd.sdmx.data+csv;version=2.0.0"}
+IMF_TIMEOUT_SECONDS = 180.0
+IMF_PERIOD_COL = "TIME_PERIOD"
+IMF_VALUE_COL = "OBS_VALUE"
+# name -> flow, series key, and series attributes to record in the manifest
+IMF_SERIES: dict[str, dict] = {
+    "CPI": {"flow": "IMF.STA/CPI", "key": "VNM.CPI._T.IX.M", "attributes": []},
+    "WEO_NGDP_RPCH": {
+        "flow": "IMF.RES/WEO",
+        "key": "VNM.NGDP_RPCH.A",
+        "attributes": ["PUBLICATION_DATE", "LATEST_ACTUAL_ANNUAL_DATA"],
+    },
+}
+
 # Paths (relative to the repository root)
 RAW_KBS_DIR = Path("data/raw/kbs")
+RAW_WB_DIR = Path("data/raw/worldbank")
+RAW_IMF_DIR = Path("data/raw/imf")
 EXTERNAL_VIETCAP_DIR = Path("data/external/vietcap")
