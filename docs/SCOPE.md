@@ -6,6 +6,11 @@ A question-answering assistant for Vietnamese users. The user asks in Vietnamese
 whether to query structured data (Text-to-SQL) or read official documents (RAG), or both, and
 answers with numbers and citations.
 
+Target users: beginner retail investors and people new to the Vietnamese market and economy.
+They ask in plain Vietnamese, may not know financial terms, and need answers that are accurate,
+sourced, and easy to understand. The assistant explains data and official reports; it does not
+give investment advice.
+
 Portfolio value: Vietnamese data, a real-world setting, a measurable evaluation set, controlled
 comparisons between versions, and a deployed demo.
 
