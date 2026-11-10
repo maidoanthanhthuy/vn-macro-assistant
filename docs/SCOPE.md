@@ -23,7 +23,7 @@ comparisons between versions, and a deployed demo.
 | Index prices: VN-Index, VN30, HNX-Index | KBS API (unofficial), snapshot | Daily OHLCV | 2015-01-01 to present |
 | 15 large-cap stocks (list below) | KBS API (unofficial), snapshot | Daily OHLCV | 2017-01-01 to present |
 | Macro indicators (list below) | World Bank API | Annual | 2000 to latest |
-| Macro indicators: actuals + IMF forecasts | IMF Data Portal (WEO), vintage stored (e.g. "WEO October 2026") | Annual | 2000 to latest actual year, plus forecast years (2026-2031 in WEO October 2026) |
+| Real GDP growth (NGDP_RPCH): actuals + IMF forecasts. First version: GDP growth only; other WEO indicators are left for a later version | IMF Data Portal (WEO), vintage stored (e.g. "WEO October 2026") | Annual | 2000 to latest actual year, plus forecast years (2026-2031 in WEO October 2026) |
 | Monthly CPI | IMF Data Portal (CPI dataset), headline CPI only | Monthly | 2001-12 to latest available (09/2026 at smoke test) |
 | SBV policy rate changes | Hand-curated from sbv.gov.vn | Event-based | 2020 to present |
 

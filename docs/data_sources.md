@@ -283,6 +283,22 @@ Lending rate, exchange rate and broad money lag behind the other indicators (lat
 - The CPI data lags the NSO release by about a month (IMF latest 2026-M09; NSO already
   published October).
 
+### World Bank and IMF raw snapshot 2026-11-10 (`fetch_worldbank.py`, `fetch_imf.py`)
+
+- World Bank (`data/raw/worldbank/2026-11-10/`): all 8 indicators OK, one page each,
+  26 rows (2000-2025; the API returns no 2026 row although 2026 was requested).
+  Latest year with a value: FR.INR.LEND 2023 (24 values), PA.NUS.FCRF 2024 (25),
+  FM.LBL.BMNY.ZG 2022 (23); the other five 2025 (26). Two calls needed one retry.
+- IMF CPI (`data/raw/imf/2026-11-10/CPI.csv`, SDMX-CSV with `attributes=all`):
+  **1,521 rows, of which 1,223 are empty placeholders** (1900-M01 to 2001-M11, empty
+  `OBS_VALUE`). The 298 rows with values cover 2001-M12 to 2026-M09 with no missing
+  month. `REFERENCE_PERIOD` is `2024A` on every row (index, 2024 = 100). At load time,
+  skip rows with an empty `OBS_VALUE`.
+- IMF WEO (`data/raw/imf/2026-11-10/WEO_NGDP_RPCH.csv`): 52 values, 1980-2031.
+  `PUBLICATION_DATE = 2026-10-13T02:00:00Z` (WEO October 2026),
+  `LATEST_ACTUAL_ANNUAL_DATA = 2025` (one value for the whole series), so 2026-2031
+  (6 years) are forecasts.
+
 ### Documents (`scripts/smoke_tests/documents.py`)
 
 - **NSO**: the monthly report page (e.g. October 2026) is **HTML** (WordPress) and carries
