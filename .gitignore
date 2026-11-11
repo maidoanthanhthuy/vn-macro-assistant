@@ -14,7 +14,8 @@ venv/
 .env
 
 # Data and models (too large / private for git)
-data/
+data/*
+!data/manual/
 models/
 *.pkl
 *.joblib
