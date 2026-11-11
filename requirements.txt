@@ -1,12 +1,9 @@
-# Runtime dependencies. Pin exact versions after the Phase 0 smoke tests.
+# Runtime dependencies actually used by the code (versions pinned from the dev .venv).
+# Add new libraries (e.g. pgvector, streamlit) only when the code starts using them.
 # Stock and index prices come from the KBS API (fallback: Vietcap) via our own
 # client in src/vnmacro/ingest/, saved as snapshots in data/raw/.
 # Do not add vnstock, vnai or vnstock3: they are quarantined on PyPI.
-imfp
-requests
-pypdf
-pandas
-psycopg[binary]
-pgvector
-python-dotenv
-streamlit
+requests==2.34.2
+psycopg[binary]==3.3.8
+python-dotenv==1.2.4
+pypdf==7.0.0  # scripts/smoke_tests/documents.py

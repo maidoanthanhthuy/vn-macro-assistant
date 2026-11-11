@@ -31,6 +31,37 @@ pip install -r requirements.txt -r requirements-dev.txt
 cp .env.example .env   # then fill in real values
 ```
 
+## Reproduce the data
+
+Raw data is **not** in the repository (only the scripts that fetch it and the hand-made
+tables in `data/manual/`). The KBS price API is unofficial and undocumented, so it may
+change or stop working; see [docs/data_sources.md](docs/data_sources.md). Each fetcher
+saves a dated snapshot under `data/raw/<source>/<date>/` and never overwrites files.
+
+```bash
+# 1. Environment
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+cp .env.example .env   # then set a strong POSTGRES_PASSWORD
+
+# 2. Database
+docker compose up -d
+
+# 3. Fetch raw snapshots (in this order)
+PYTHONPATH=src python -m vnmacro.ingest.fetch_kbs
+PYTHONPATH=src python -m vnmacro.ingest.fetch_worldbank
+PYTHONPATH=src python -m vnmacro.ingest.fetch_imf
+
+# 4. Create the tables (empty database)
+docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/schema.sql
+
+# 5. Clean, check and load (uses the latest snapshot of each source)
+PYTHONPATH=src python -m vnmacro.ingest.load_db
+```
+
+A newer snapshot can give different adjusted prices (new corporate actions) and newer
+macro values, so results may differ from the 2026-11-10 snapshot used in this project.
+
 ## Database
 
 PostgreSQL 16 + pgvector runs in Docker on `127.0.0.1:5432` (port from `POSTGRES_PORT` in
