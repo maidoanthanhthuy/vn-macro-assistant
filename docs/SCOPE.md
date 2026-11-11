@@ -99,6 +99,11 @@ MVP subset: the most recent 12 months of each document type. Expand after the pi
 - Forecast values are stored with is_forecast = true and the WEO vintage.
 - Any answer using a forecast must say it is an IMF forecast and name the WEO vintage.
   The assistant never makes its own forecasts.
+- Default source when the user does not name one (always state the source in the answer):
+  - Past years (annual macro): World Bank.
+  - Future years: IMF WEO, always called a forecast with its vintage.
+  - Monthly inflation: IMF CPI.
+- If the user names a source, use exactly that source.
 
 ## 5. Architecture
 
