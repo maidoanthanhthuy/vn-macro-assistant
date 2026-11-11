@@ -59,21 +59,21 @@ CREATE TABLE daily_prices (
 CREATE INDEX daily_prices_date_idx ON daily_prices (date);
 
 COMMENT ON TABLE daily_prices IS
-    'Daily OHLCV for 15 stocks (from 2017-01-01) and 3 indices (from 2015-01-01); trading days only. Stock prices are adjusted. Source: KBS.';
+    'Daily OHLCV for 15 stocks (from 2017-01-01) and 3 indices (from 2015-01-01); trading days only. Source: KBS. Stock prices are ADJUSTED for dividends and bonus shares (they may differ from the trading board price of that day and can change in a new snapshot); volume is the real, unadjusted volume.';
 COMMENT ON COLUMN daily_prices.date IS
     'Trading date (Vietnam time).';
 COMMENT ON COLUMN daily_prices.symbol IS
     'Ticker or index code; see symbols.';
 COMMENT ON COLUMN daily_prices.open IS
-    'Opening price: VND for stocks, points for indices (see symbols.price_unit).';
+    'Opening price: adjusted VND for stocks, points for indices (see symbols.price_unit).';
 COMMENT ON COLUMN daily_prices.high IS
-    'Highest price of the day: VND for stocks, points for indices.';
+    'Highest price of the day: adjusted VND for stocks, points for indices.';
 COMMENT ON COLUMN daily_prices.low IS
-    'Lowest price of the day: VND for stocks, points for indices.';
+    'Lowest price of the day: adjusted VND for stocks, points for indices.';
 COMMENT ON COLUMN daily_prices.close IS
-    'Closing price: VND for stocks, points for indices. Use for returns (close-to-close).';
+    'Closing price: adjusted VND for stocks, points for indices. Use for returns (close-to-close). When quoting a stock price for a day, say it is adjusted and may differ from the board price.';
 COMMENT ON COLUMN daily_prices.volume IS
-    'Matched volume in shares (for indices: total shares of the index). NULL when the source value is known to be wrong.';
+    'Matched volume in shares, real (not adjusted for bonus shares); for indices: total shares of the index. NULL when the source value is known to be wrong. close * volume is not the traded value.';
 
 -- ---------------------------------------------------------------------------
 -- indicators

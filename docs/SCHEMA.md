@@ -78,7 +78,9 @@ Expected rows: 15 stocks (all on HOSE) and 3 indices (`VNINDEX`, `VN30` on HOSE;
 - PK `(symbol, date)`; extra index on `date` for "all symbols on day X" queries.
 - Units: stocks in **VND** (dong, not thousand dong; KBS already returns dong), indices in
   **points**. The unit is in `symbols.price_unit`, so one table holds both.
-- Stock prices are adjusted as returned by KBS (see open issue in `docs/data_sources.md`).
+- Stock prices are **adjusted** for dividends and bonus shares (checked against CafeF,
+  `docs/data_sources.md`); `volume` is the real, unadjusted volume. A price for a given
+  day may differ from the board price, and adjusted levels can change in a new snapshot.
 - `volume` is nullable because a known bad source value is set to NULL instead of being
   guessed (VNINDEX 2016-03-04, see `docs/data_sources.md`).
 - Checks: all prices > 0, `low <= high`, `volume >= 0`.
@@ -181,3 +183,5 @@ Expected rows (10):
 
 - Phase 3 idea: symbols has only 18 rows, so include the whole table in the LLM prompt for
   name-to-symbol mapping instead of fuzzy SQL search.
+- Store unadjusted (board) prices alongside adjusted prices, from a corporate-actions or
+  raw-price source.

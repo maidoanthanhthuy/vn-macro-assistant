@@ -87,6 +87,12 @@ MVP subset: the most recent 12 months of each document type. Expand after the pi
 - Returns use adjusted prices when the source provides them. If only unadjusted prices
   are available, the answer states this limitation (returns across dividends, bonus
   shares or splits may be distorted).
+- Prices are adjusted for dividends and bonus shares. Percentage changes use adjusted
+  prices. Volume is the real traded volume (not adjusted).
+- When answering the price of a specific day, the assistant must say it is an adjusted
+  price and may differ from the price shown on the trading board that day.
+- Adjusted prices can change when a new snapshot includes new corporate actions;
+  reference answers that use price levels are tied to the snapshot date.
 - "N months after event X" starts from the first trading day on or after the event date.
 - Every numeric answer states its source and date range; every document-based answer cites
   the document title and publication date.

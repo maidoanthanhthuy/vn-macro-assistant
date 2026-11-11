@@ -79,8 +79,8 @@ Daily OHLCV history, `POST` request:
 KBS answers are from the 2026-11-09 smoke test. Vietcap was tested for indices only on
 2026-11-10 (see "Vietcap index cross-check").
 
-- [ ] Adjusted or unadjusted? KBS: **probably adjusted** (no FPT daily move beyond +/-7%
-      in ten years). Still to confirm with the bonus-share check below.
+- [x] Adjusted or unadjusted? KBS: **prices are adjusted, volume is not** (confirmed
+      2026-11-11 against CafeF; see "KBS price adjustment check" below).
 - [x] Earliest date available (scope needs 2015-01-01). KBS: indices from 2015-01-05;
       stocks only from mid-2016 (see results). No per-request cap was found.
 - [x] Format of `t`. KBS: string `"YYYY-MM-DD 07:00"` (date plus a fixed 07:00).
@@ -134,7 +134,7 @@ reference**:
 
 | Source | Works? | Data range | Notes |
 |---|---|---|---|
-| KBS daily prices (stocks) | Yes | Mid-2016 to today (FPT from 2016-09-21, VCB 2016-07-25, HPG 2016-05-25) | No data before mid-2016, so 2015-01 to mid-2016 is missing for stocks. Probably adjusted prices. |
+| KBS daily prices (stocks) | Yes | Mid-2016 to today (FPT from 2016-09-21, VCB 2016-07-25, HPG 2016-05-25) | No data before mid-2016, so 2015-01 to mid-2016 is missing for stocks. Probably adjusted prices. (Resolved 2026-11-11: see 'KBS price adjustment check') |
 | KBS daily prices (indices) | Yes | VNINDEX 2015-01-05 to today | Values are sometimes JSON numbers, sometimes strings: always parse as float. |
 | Vietcap (fallback) | Yes, indices (tested 2026-11-10) | Indices from 2014 to today | Used as a cross-check for indices. Stocks not tested. |
 | World Bank API | Yes, all 8 codes valid | From 1983-1996 (varies) to 2022-2025 | Latest year differs per indicator (table below). |
@@ -155,6 +155,7 @@ reference**:
   2026. Prices are therefore **probably adjusted**. FPT's first close (8,926 VND in 2016)
   is low compared with today's 51,000, which also fits back-adjustment. Confirm with the
   bonus-share check above.
+  (Resolved 2026-11-11: see 'KBS price adjustment check')
 - Extra field `va` (traded value) appears on some rows. The row for the current day may be
   incomplete (`va` missing), so take snapshots after the market close.
 
@@ -298,6 +299,27 @@ Lending rate, exchange rate and broad money lag behind the other indicators (lat
   `PUBLICATION_DATE = 2026-10-13T02:00:00Z` (WEO October 2026),
   `LATEST_ACTUAL_ANNUAL_DATA = 2025` (one value for the whole series), so 2026-2031
   (6 years) are forecasts.
+
+### KBS price adjustment check (2026-11-11)
+
+**Conclusion: KBS returns ADJUSTED prices (for dividends and bonus shares) and REAL,
+unadjusted volume.** Checked by MĐTT on CafeF in a browser on 2026-11-11, trading day
+2025-12-31. CafeF shows prices in thousand VND, with a board close ("Đóng cửa") and an
+adjusted close ("Điều chỉnh"):
+
+| Ticker | CafeF close (board) | CafeF adjusted | Database (KBS) close | CafeF volume | Database volume |
+|---|---|---|---|---|---|
+| HPG | 26.40 | 23.57 | 23,565 | 20,149,700 | 20,149,700 |
+| VCB | 57.50 | 57.02 | 57,078 | 2,530,800 | 2,530,800 |
+| FPT | 95.80 | 85.91 | 85,932 | 3,082,600 | 3,082,600 |
+
+- The KBS close matches CafeF's adjusted close within about 0.1% (rounding and possibly
+  slightly different adjustment factors), and is 0.7%-11% below the board close.
+- Volume matches CafeF exactly, so it is the real traded volume, not scaled for bonus
+  shares. Consequence: adjusted close x volume is not the traded value of the day.
+- Adjusted prices change when a later snapshot includes new corporate actions, so price
+  levels (not only returns) depend on the snapshot date.
+- Unadjusted board prices are not stored (idea for a later version in docs/SCHEMA.md).
 
 ### Database load checks (`src/vnmacro/ingest/load_db.py`)
 
