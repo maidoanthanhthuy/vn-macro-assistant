@@ -1,0 +1,11 @@
+indicator_code,name,unit,source,frequency,table_name,notes,verified
+NY.GDP.MKTP.KD.ZG,Tăng trưởng GDP (% hằng năm),%,World Bank,annual,macro_annual,Real GDP growth at constant prices. Default source for past years. Latest year 2025 (snapshot 2026-11-10).,yes
+FP.CPI.TOTL.ZG,Lạm phát theo giá tiêu dùng (% hằng năm),%,World Bank,annual,macro_annual,Annual average inflation. For monthly inflation use cpi_monthly (IMF CPI). Latest year 2025.,yes
+FR.INR.LEND,Lãi suất cho vay (%),%,World Bank,annual,macro_annual,"Average bank lending rate, not an SBV policy rate (see policy_events). Lags 2-3 years: latest year 2023.",yes
+PA.NUS.FCRF,"Tỷ giá hối đoái chính thức (đồng/USD, bình quân kỳ)",VND/USD,World Bank,annual,macro_annual,Period average of the official rate. Lags 1-2 years: latest year 2024.,yes
+SL.UEM.TOTL.ZS,"Tỷ lệ thất nghiệp (% tổng lực lượng lao động, ước tính mô hình ILO)",% labor force,World Bank,annual,macro_annual,ILO modeled estimate; may differ from NSO figures. Latest year 2025.,yes
+BX.KLT.DINV.WD.GD.ZS,"Đầu tư trực tiếp nước ngoài, vốn vào ròng (% GDP)",% GDP,World Bank,annual,macro_annual,"Net inflows (balance of payments), not registered FDI. Latest year 2025.",yes
+NE.EXP.GNFS.ZS,Xuất khẩu hàng hóa và dịch vụ (% GDP),% GDP,World Bank,annual,macro_annual,Latest year 2025.,yes
+FM.LBL.BMNY.ZG,Tăng trưởng tiền rộng (% hằng năm),%,World Bank,annual,macro_annual,Broad money (M2) growth. Lags 3 years: latest year 2022.,yes
+NGDP_RPCH,"Tăng trưởng GDP thực (giá cố định, % thay đổi)",%,IMF WEO,annual,macro_annual,"Years after LATEST_ACTUAL_ANNUAL_DATA are IMF forecasts (is_forecast = true); WEO October 2026: actuals to 2025, forecasts 2026-2031. Only the latest vintage is stored. Default source for future years.",yes
+CPI,"Chỉ số giá tiêu dùng (CPI), toàn bộ hàng hóa và dịch vụ",index (2024 = 100),IMF CPI,monthly,cpi_monthly,"IMF series VNM.CPI._T.IX.M; base period 2024 = 100. inflation_yoy = % change vs same month of previous year, computed at load. Lags NSO by about 1 month. Default source for monthly inflation.",yes
