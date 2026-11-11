@@ -57,6 +57,15 @@ docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d 
 docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/schema.sql
 ```
 
+Clean, check and load all data (latest raw snapshots + `data/manual/`). The load empties
+and refills every table in one transaction; if a blocking check fails, nothing changes.
+A report is printed and saved to `data/reports/`.
+
+```bash
+PYTHONPATH=src python -m vnmacro.ingest.load_db --dry-run   # checks and report only
+PYTHONPATH=src python -m vnmacro.ingest.load_db             # load
+```
+
 Remove the container and its volume:
 
 > **WARNING: `down -v` DELETES ALL DATA** (the `pgdata` volume is removed for good).

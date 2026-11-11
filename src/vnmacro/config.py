@@ -78,6 +78,12 @@ IMF_VALUE_COL = "OBS_VALUE"
 # name -> flow, series key, and series attributes to record in the manifest
 IMF_SERIES: dict[str, dict] = {
     "CPI": {"flow": "IMF.STA/CPI", "key": "VNM.CPI._T.IX.M", "attributes": []},
+    # IMF's own y/y inflation; used only to check our inflation_yoy at load time.
+    "CPI_YOY": {
+        "flow": "IMF.STA/CPI",
+        "key": "VNM.CPI._T.YOY_PCH_PA_PT.M",
+        "attributes": [],
+    },
     "WEO_NGDP_RPCH": {
         "flow": "IMF.RES/WEO",
         "key": "VNM.NGDP_RPCH.A",
@@ -90,3 +96,16 @@ RAW_KBS_DIR = Path("data/raw/kbs")
 RAW_WB_DIR = Path("data/raw/worldbank")
 RAW_IMF_DIR = Path("data/raw/imf")
 EXTERNAL_VIETCAP_DIR = Path("data/external/vietcap")
+MANUAL_DIR = Path("data/manual")
+REPORTS_DIR = Path("data/reports")
+
+# Database load (src/vnmacro/ingest/load_db.py)
+MACRO_START_YEAR = 2000  # World Bank and WEO rows from this year
+PRICE_FIXES_FILE = MANUAL_DIR / "price_fixes.csv"
+EXPECTED_SYMBOLS = 18
+# Daily price band per exchange (%): a normal session cannot move beyond it. Moves
+# larger than band + tolerance (rounding of adjusted prices) are reported as warnings.
+PRICE_BAND_PCT: dict[str, float] = {"HOSE": 7.0, "HNX": 10.0}
+BAND_TOLERANCE_PP = 0.1
+YOY_TOLERANCE_PP = 0.01  # max gap between our inflation_yoy and IMF's y/y series
+MIN_STOCK_PRICE_VND = 1000.0  # lower stock prices suggest thousand-VND units

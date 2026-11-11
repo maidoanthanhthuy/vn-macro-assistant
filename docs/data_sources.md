@@ -299,6 +299,25 @@ Lending rate, exchange rate and broad money lag behind the other indicators (lat
   `LATEST_ACTUAL_ANNUAL_DATA = 2025` (one value for the whole series), so 2026-2031
   (6 years) are forecasts.
 
+### Database load checks (`src/vnmacro/ingest/load_db.py`)
+
+- Known data fixes live in one file, `data/manual/price_fixes.csv` (symbol, date, action,
+  reason). Actions: `drop_row` (fake row), `null_volume` (wrong volume, prices kept),
+  `known_missing` (a missing date with a known or checked reason; skipped by the date
+  mismatch warning).
+- **Daily move warning uses each exchange's price band:** HOSE +/-7%, HNX +/-10%, plus
+  0.1 percentage point for rounding of adjusted prices. The band is the limit a price
+  cannot pass in a normal session, so a larger close-to-close move points to a data error,
+  a corporate action not adjusted, or a special session (e.g. a first trading day). The
+  exchange comes from `symbols.exchange` and applies to stocks and indices alike.
+- **VHM 2018-05-18 and 2018-05-21** are missing in KBS although VNINDEX and VN30 traded.
+  Vietcap (`data/external/vietcap/2026-11-11/VHM.json`, checked 2026-11-11) has rows with
+  volume 0 on both dates, i.e. no trading in either source; the reason is unknown (VHM was
+  listed on 2018-05-17). Recorded as `known_missing`; nothing is filled in.
+  - Other oddities in the same Vietcap response (not used, noted only): 2018-05-22 has a
+    volume of just 20 shares, and the response also holds rows from 2017, before the
+    listing date, which look like API placeholders.
+
 ### Documents (`scripts/smoke_tests/documents.py`)
 
 - **NSO**: the monthly report page (e.g. October 2026) is **HTML** (WordPress) and carries

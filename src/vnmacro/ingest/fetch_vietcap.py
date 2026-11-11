@@ -1,9 +1,12 @@
-"""Fetch raw daily index data from Vietcap, as a validation source only.
+"""Fetch raw daily data from Vietcap, as a validation source only.
 
-Vietcap numbers are used to check the KBS index series; they are never merged
-into the main data. Run from the repository root:
+Vietcap numbers are used to check KBS data; they are never merged into the main
+data. Run from the repository root:
 
     PYTHONPATH=src python -m vnmacro.ingest.fetch_vietcap
+    # one stock over a short window, e.g. to check missing KBS dates:
+    PYTHONPATH=src python -m vnmacro.ingest.fetch_vietcap --symbols VHM \
+        --start 2018-05-14 --end 2018-05-25
 
 Responses are saved byte for byte to <out-root>/<snapshot date>/<SYMBOL>.json
 (SYMBOL = our name, e.g. HNXINDEX). Existing files are never overwritten.
@@ -115,10 +118,15 @@ def fetch_index(
 
 def main(argv: list[str] | None = None) -> None:
     """Command-line entry point."""
-    parser = argparse.ArgumentParser(description="Fetch Vietcap index data (check).")
+    parser = argparse.ArgumentParser(description="Fetch Vietcap data (check only).")
     parser.add_argument(
         "--snapshot-date", type=date.fromisoformat, default=date.today()
     )
+    parser.add_argument(
+        "--symbols", nargs="+", help="our symbols (default: the three indices)"
+    )
+    parser.add_argument("--start", type=date.fromisoformat, default=config.INDEX_START)
+    parser.add_argument("--end", type=date.fromisoformat, help="default: snapshot date")
     parser.add_argument("--out-root", type=Path, default=config.EXTERNAL_VIETCAP_DIR)
     args = parser.parse_args(argv)
 
@@ -130,19 +138,21 @@ def main(argv: list[str] | None = None) -> None:
     else:
         manifest = {
             "source": "Vietcap",
-            "purpose": "validation of KBS index data only; never merged into main data",
+            "purpose": "validation of KBS data only; never merged into main data",
             "snapshot_date": args.snapshot_date.isoformat(),
             "endpoint": f"POST {config.VIETCAP_URL}",
             "symbols": {},
         }
     settings = HttpSettings(base_url=config.VIETCAP_URL, headers=config.VIETCAP_HEADERS)
     session = requests.Session()
-    for symbol, vc_symbol in config.VIETCAP_INDEX_SYMBOLS.items():
+    symbols = args.symbols or list(config.VIETCAP_INDEX_SYMBOLS)
+    for symbol in symbols:
+        vc_symbol = config.VIETCAP_INDEX_SYMBOLS.get(symbol, symbol)
         entry = fetch_index(
             symbol,
             vc_symbol,
-            config.INDEX_START,
-            args.snapshot_date,
+            args.start,
+            args.end or args.snapshot_date,
             snapshot_dir,
             session,
             settings,

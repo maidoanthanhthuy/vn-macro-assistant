@@ -1,0 +1,10 @@
+symbol,date,action,reason
+VNINDEX,2018-01-24,drop_row,"Fake KBS row: OHLCV copied from 2018-01-22; HOSE did not trade on 2018-01-24 (system failure)"
+VNINDEX,2016-03-04,null_volume,"KBS volume repeats 2016-03-03 (Vietcap 131099670); prices match Vietcap, so keep them"
+VNINDEX,2018-01-23,known_missing,"HOSE did not trade on 2018-01-23 (system failure)"
+VNINDEX,2018-01-24,known_missing,"HOSE did not trade on 2018-01-24 (system failure)"
+VN30,2018-01-23,known_missing,"HOSE did not trade on 2018-01-23 (system failure)"
+VN30,2018-01-24,known_missing,"HOSE did not trade on 2018-01-24 (system failure)"
+VN30,2016-03-04,known_missing,"KBS is missing a real trading day; not filled from Vietcap"
+VHM,2018-05-18,known_missing,"No trading in either source, reason unknown (Vietcap volume 0; checked 2026-11-11)"
+VHM,2018-05-21,known_missing,"No trading in either source, reason unknown (Vietcap volume 0; checked 2026-11-11)"
