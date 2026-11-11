@@ -53,8 +53,9 @@ Sector values (the groups in `docs/SCOPE.md` section 2.1): `Ngân hàng`,
 `Bất động sản / Đa ngành`, `Công nghiệp / Vật liệu`, `Công nghệ`, `Tiêu dùng / Bán lẻ`,
 `Năng lượng`, `Chứng khoán`.
 
-`aliases` is plain comma-separated text, not an array, so the LLM can search it with a simple
-`ILIKE '%...%'` (together with `name` and `full_name`) without `unnest`.
+`aliases` is plain comma-separated text, not an array, so the LLM can search it with `ILIKE`
+without `unnest`. Match a whole name, not a substring: `', ' || aliases || ',' ILIKE '%, mb,%'`.
+A substring search (`ILIKE '%mb%'`) wrongly matches Vietcombank and Techcombank.
 
 Checks: a stock has `price_unit = 'VND'` and a sector; an index has `price_unit = 'points'`
 and no sector.
@@ -175,3 +176,8 @@ Expected rows (10):
   (`indicators.source`) or the table (`daily_prices` = KBS, `cpi_monthly` = IMF CPI).
 - **Raw data stays in files.** Fixes from `docs/data_sources.md` (dropped rows, NULL volume)
   are applied at load time; the database holds only the cleaned result.
+
+## Ideas for later phases
+
+- Phase 3 idea: symbols has only 18 rows, so include the whole table in the LLM prompt for
+  name-to-symbol mapping instead of fuzzy SQL search.

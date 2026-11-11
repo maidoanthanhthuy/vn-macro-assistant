@@ -29,7 +29,7 @@ COMMENT ON COLUMN symbols.name IS
 COMMENT ON COLUMN symbols.full_name IS
     'Full Vietnamese company or index name.';
 COMMENT ON COLUMN symbols.aliases IS
-    'Other names users may type, comma-separated (Vietnamese, no diacritics, abbreviations). Search with ILIKE, e.g. aliases ILIKE ''%vietcombank%'' OR name ILIKE ''%vietcombank%''.';
+    'Other names users may type, comma-separated (Vietnamese, no diacritics, abbreviations). Match a whole name, not a substring: '', '' || aliases || '','' ILIKE ''%, mb,%''. A substring search such as aliases ILIKE ''%mb%'' wrongly matches Vietcombank and Techcombank.';
 COMMENT ON COLUMN symbols.asset_type IS
     '''stock'' or ''index''.';
 COMMENT ON COLUMN symbols.sector IS
