@@ -60,7 +60,7 @@ First version (MVP):
 | Document type | Source | Reference periods | Count |
 |---|---|---|---|
 | Monthly socio-economic reports (the report for the last month of a quarter is the quarterly report) | National Statistics Office (nso.gov.vn) | 2025-11 to 2026-10 | 12 |
-| Directive 01/CT-NHNN (2026) on monetary policy and banking tasks for the year | State Bank of Vietnam (sbv.gov.vn) | 2026 | 1 |
+| Directive 01/CT-NHNN (2026) on monetary policy and banking tasks for the year | State Bank of Vietnam (news summary via thitruongtaichinhtiente.vn; full text pending) | 2026 | 1 |
 | Quarterly press releases / press conferences on banking results | State Bank of Vietnam (via vnba.org.vn) | 2025-Q4, 2026-Q1, 2026-Q2, 2026-Q3 | 4 |
 
 Selection rules:
