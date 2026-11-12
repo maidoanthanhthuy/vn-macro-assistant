@@ -98,6 +98,21 @@ RAW_IMF_DIR = Path("data/raw/imf")
 EXTERNAL_VIETCAP_DIR = Path("data/external/vietcap")
 MANUAL_DIR = Path("data/manual")
 REPORTS_DIR = Path("data/reports")
+RAW_DOCUMENTS_DIR = Path("data/raw/documents")
+
+# RAG source documents (src/vnmacro/ingest/fetch_documents.py, docs/SCOPE.md 2.2)
+DOCUMENTS_FILE = MANUAL_DIR / "documents.csv"
+DOC_PAUSE_SECONDS = 1.5  # pause after every call (1-2 s)
+# Generic client name: no personal or project details.
+DOC_HEADERS: dict[str, str] = {
+    "User-Agent": "Mozilla/5.0 (compatible; document-snapshot/0.1)",
+    "Accept": "*/*",
+}
+# Sources whose full text is a .docx attachment linked in the `notes` column.
+DOCX_SOURCES: tuple[str, ...] = ("NSO",)
+# HTTP codes and page text that mean the site refuses automated access.
+BLOCK_HTTP_CODES: tuple[int, ...] = (401, 403, 429)
+BLOCK_MARKERS: tuple[str, ...] = ("Request Rejected", "Access Denied", "captcha")
 
 # Database load (src/vnmacro/ingest/load_db.py)
 MACRO_START_YEAR = 2000  # World Bank and WEO rows from this year
