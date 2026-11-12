@@ -117,7 +117,7 @@ BLOCK_MARKERS: tuple[str, ...] = ("Request Rejected", "Access Denied", "captcha"
 # Text extraction (src/vnmacro/ingest/extract_text.py)
 PROCESSED_DOCUMENTS_DIR = Path("data/processed/documents")
 FRONT_MATTER_FIELDS: tuple[str, ...] = (
-    "doc_id", "source", "doc_type", "title",
+    "doc_id", "source", "doc_type", "title", "context_label",
     "reference_period", "published_date", "url",
 )  # fmt: skip
 # Article body per website: CSS selectors for the lead paragraph (sapo), the body, and
@@ -141,6 +141,23 @@ MIN_CHARS: dict[str, int] = {"nso_monthly_report": 20000, "default": 2000}
 JUNK_PHRASES: tuple[str, ...] = (
     "Tính lãi tiền gửi", "Bình luận", "Tin liên quan", "Đặt mua tạp chí",
 )  # fmt: skip
+# Chunking (src/vnmacro/rag/chunking.py). One entry per strategy, so later phases can
+# add strategies without changing the code.
+CHUNKS_DIR = Path("data/processed/chunks")
+CHUNKING_STRATEGIES: dict[str, dict] = {
+    "heading_v1": {
+        "max_chars": 1500,  # longer sections are split at paragraph, then sentence
+        "min_chars": 300,  # shorter sections are merged with the next section
+        "overlap_chars": 0,  # no overlap between chunks (only 0 is supported)
+        "context_sep": " › ",
+    },
+}
+DEFAULT_CHUNKING = "heading_v1"
+# Words ending in "." that do not end a sentence (e.g. "TP. Hồ Chí Minh").
+SENTENCE_ABBREVIATIONS: tuple[str, ...] = ("TP", "Tp", "TS", "ThS", "PGS", "GS")
+# Chunk checks: the chunk holding this answer must carry this context text.
+REQUIRED_CONTEXT: dict[str, str] = {"nso_report_2026_06": "tháng 6/2026"}
+
 # Answer to seed question q10 (must survive extraction)
 REQUIRED_TEXT: dict[str, str] = {
     "nso_report_2026_06": (

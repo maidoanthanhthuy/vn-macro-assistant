@@ -185,3 +185,5 @@ Expected rows (10):
   name-to-symbol mapping instead of fuzzy SQL search.
 - Store unadjusted (board) prices alongside adjusted prices, from a corporate-actions or
   raw-price source.
+- Phase 6: try balanced splitting (split a long section into roughly equal parts) as a
+  new chunking strategy.
