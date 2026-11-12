@@ -52,16 +52,30 @@ World Bank indicators (codes to be verified in smoke test):
 
 ### 2.2 Documents (vector store) - for interpretation and policy questions
 
-| Document type | Source | Range |
-|---|---|---|
-| Monthly socio-economic reports | National Statistics Office (nso.gov.vn) | 2022-01 to present |
-| Monthly price / CPI press releases | National Statistics Office (nso.gov.vn) | 2022-01 to present |
-| SBV press releases on monetary policy and interest rates | State Bank of Vietnam (sbv.gov.vn) | 2022-01 to present |
+The document list is kept in `data/manual/documents.csv` (one row per document, with URL,
+publication date and a `verified` flag).
 
-Why from 2022: this range covers both the 2022 tightening cycle and the 2023 easing cycle, so
-policy questions have real events to point to.
+First version (MVP):
 
-MVP subset: the most recent 12 months of each document type. Expand after the pipeline works.
+| Document type | Source | Reference periods | Count |
+|---|---|---|---|
+| Monthly socio-economic reports (the report for the last month of a quarter is the quarterly report) | National Statistics Office (nso.gov.vn) | 2025-11 to 2026-10 | 12 |
+| Directive 01/CT-NHNN (2026) on monetary policy and banking tasks for the year | State Bank of Vietnam (sbv.gov.vn) | 2026 | 1 |
+| Quarterly press releases / press conferences on banking results | State Bank of Vietnam (via vnba.org.vn) | 2025-Q4, 2026-Q1, 2026-Q2, 2026-Q3 | 4 |
+
+Selection rules:
+
+- Prefer the official page on nso.gov.vn or sbv.gov.vn. If a document cannot be found or the
+  site blocks access, it still gets a row, with an empty URL and the reason in `notes`.
+- SBV documents are taken from their republication on vnba.org.vn (Vietnam Banks
+  Association), because sbv.gov.vn blocks automated access and is often unavailable. Each
+  republication is checked in a browser against the original press conference.
+- No separate NSO CPI press releases: the monthly report already has a prices section with
+  the CPI figures and the reasons for the change.
+
+Later version: extend the range back to 2022-01, so policy questions can cover the 2022
+tightening cycle and the 2023 easing cycle. This includes the SBV press releases on the
+policy rate changes of 2022-2023, added together with downloading documents back to 2022.
 
 ### 2.3 Question types
 
@@ -169,6 +183,9 @@ embeddings, so deployment needs a single database container.
   fill the 2015-2016 gap, to avoid mixing two sources that may adjust prices differently.
 - SBV policy-rate events are curated by hand and must be checked against the original SBV
   announcements.
+- sbv.gov.vn blocks automated access ("Request Rejected") and is often unavailable, so SBV
+  documents for RAG come from republications on vnba.org.vn. Risk: a republication may be
+  shortened or edited, so each one is checked in a browser before `verified = yes`.
 
 ## 9. Phase 0 exit criteria
 
