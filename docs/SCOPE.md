@@ -60,7 +60,7 @@ First version (MVP):
 | Document type | Source | Reference periods | Count |
 |---|---|---|---|
 | Monthly socio-economic reports (the report for the last month of a quarter is the quarterly report) | National Statistics Office (nso.gov.vn) | 2025-11 to 2026-10 | 12 |
-| Directive 01/CT-NHNN (2026) on monetary policy and banking tasks for the year | State Bank of Vietnam (news summary via thitruongtaichinhtiente.vn; full text pending) | 2026 | 1 |
+| Directive 01/CT-NHNN (2026) on monetary policy and banking tasks for the year | State Bank of Vietnam (news summary via thitruongtaichinhtiente.vn) | 2026 | 1 |
 | Quarterly press releases / press conferences on banking results | State Bank of Vietnam (via vnba.org.vn) | 2025-Q4, 2026-Q1, 2026-Q2, 2026-Q3 | 4 |
 
 Selection rules:
@@ -72,6 +72,11 @@ Selection rules:
   republication is checked in a browser against the original press conference.
 - No separate NSO CPI press releases: the monthly report already has a prices section with
   the CPI figures and the reasons for the change.
+- NSO reports are ingested from the attached full-text .docx (link in `notes`), not from the
+  web page: the page is a shortened version and can miss details such as the reasons for a
+  CPI change.
+- Directive 01/CT-NHNN is covered by a news summary (not the full text); this is accepted
+  for the first version.
 
 Later version: extend the range back to 2022-01, so policy questions can cover the 2022
 tightening cycle and the 2023 easing cycle. This includes the SBV press releases on the
