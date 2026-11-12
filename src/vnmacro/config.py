@@ -114,6 +114,40 @@ DOCX_SOURCES: tuple[str, ...] = ("NSO",)
 BLOCK_HTTP_CODES: tuple[int, ...] = (401, 403, 429)
 BLOCK_MARKERS: tuple[str, ...] = ("Request Rejected", "Access Denied", "captcha")
 
+# Text extraction (src/vnmacro/ingest/extract_text.py)
+PROCESSED_DOCUMENTS_DIR = Path("data/processed/documents")
+FRONT_MATTER_FIELDS: tuple[str, ...] = (
+    "doc_id", "source", "doc_type", "title",
+    "reference_period", "published_date", "url",
+)  # fmt: skip
+# Article body per website: CSS selectors for the lead paragraph (sapo), the body, and
+# the parts of the body to drop (images, captions, source line, share buttons).
+SITE_RULES: dict[str, dict] = {
+    "vnba.org.vn": {
+        "sapo": ".sapo",
+        "body": "div#post_content",
+        "drop": ["figure", "h6", ".meta-info", ".social-actions", "script", "style"],
+    },
+    "thitruongtaichinhtiente.vn": {
+        "sapo": ".sc-longform-header-sapo",
+        "body": "div.entry",
+        "drop": [".sc-longform-header", ".sc-empty-layer", "figure", "script", "style"],
+    },
+}
+NSO_MAX_HEADING_CHARS = 150  # longer paragraphs are never headings
+# Checks after extraction
+EXPECTED_DOCUMENTS = 17
+MIN_CHARS: dict[str, int] = {"nso_monthly_report": 20000, "default": 2000}
+JUNK_PHRASES: tuple[str, ...] = (
+    "Tính lãi tiền gửi", "Bình luận", "Tin liên quan", "Đặt mua tạp chí",
+)  # fmt: skip
+# Answer to seed question q10 (must survive extraction)
+REQUIRED_TEXT: dict[str, str] = {
+    "nso_report_2026_06": (
+        r"CPI\)? tháng Sáu giảm[^.]*do giá xăng dầu giảm theo giá nhiên liệu thế giới"
+    ),
+}
+
 # Database load (src/vnmacro/ingest/load_db.py)
 MACRO_START_YEAR = 2000  # World Bank and WEO rows from this year
 PRICE_FIXES_FILE = MANUAL_DIR / "price_fixes.csv"
