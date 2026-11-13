@@ -78,9 +78,11 @@ Selection rules:
 - Directive 01/CT-NHNN is covered by a news summary (not the full text); this is accepted
   for the first version.
 
-Later version: extend the range back to 2022-01, so policy questions can cover the 2022
-tightening cycle and the 2023 easing cycle. This includes the SBV press releases on the
+Optional later update: extend the range back to 2022-01, so policy questions can cover the
+2022 tightening cycle and the 2023 easing cycle. This includes the SBV press releases on the
 policy rate changes of 2022-2023, added together with downloading documents back to 2022.
+This is **optional** and is done only after deployment (Phase 7), as an update release; the
+first version is built, evaluated and deployed with the MVP documents above.
 
 ### 2.3 Question types
 
@@ -156,8 +158,8 @@ embeddings, so deployment needs a single database container.
 | Market data | KBS API (unofficial; fallback: Vietcap), snapshot in `data/raw/` |
 | IMF data | IMF Data Portal SDMX 3.0 API (e.g. via the imfp package) |
 | Agent | Plain LLM tool calling first; LangGraph only if needed |
-| Embeddings | One multilingual open model (e.g. bge-m3) vs one API embedding model |
-| LLMs | One strong API model vs one smaller/cheaper model |
+| Embeddings | `AITeamVN/Vietnamese_Embedding_v2` (open, pinned commit, CPU) vs one API embedding model from the LLM provider (1024 dims) |
+| LLMs | One API model, chosen in Phase 3 (no LLM comparison in the first version) |
 | UI | Streamlit |
 | Packaging | Docker Compose |
 
@@ -168,7 +170,24 @@ embeddings, so deployment needs a single database container.
 - Target mix: ~40 numeric, ~40 interpretation, ~10 hybrid, ~10 out-of-scope.
 - Metrics: routing accuracy, SQL execution accuracy, retrieval recall@k, answer faithfulness,
   refusal accuracy, latency, cost per question.
-- Planned comparisons: RAG-only vs RAG + SQL agent; chunking strategies; embedding models; LLMs.
+- Planned comparisons (Phase 6), only these two:
+  1. **RAG-only vs agent (RAG + Text-to-SQL)** on the same eval set.
+  2. **Embedding models:** `AITeamVN/Vietnamese_Embedding_v2` vs one API embedding model
+     from the same provider as the LLM chosen in Phase 3, with the API output set to
+     1024 dimensions (same vector column). Measures: retrieval hit@5, latency, cost per
+     query, deployment footprint (model size, RAM, extra services).
+- Scoring the first version: q11, q15 and q17 are marked "not applicable (requires 2022+
+  documents)" and are not counted in any score. They become scored questions only if the
+  optional 2022+ document update (section 2.2) is done.
+
+### Future work / not in first version
+
+- Chunking strategies, including balanced splitting (split a long section into roughly
+  equal parts) as an alternative to `heading_v1`.
+- LLM comparison (e.g. a strong model vs a smaller, cheaper one).
+- Other open embedding models: BGE-M3, Qwen3-Embedding.
+- A reranker on top of vector search.
+- Documents back to 2022 (optional update after Phase 7, section 2.2).
 
 ## 8. Data notes and risks
 
