@@ -65,3 +65,76 @@ def test_is_blocked_by_code_or_marker():
     assert fd.is_blocked(403, b"", codes, markers)
     assert fd.is_blocked(200, b"<title>Request Rejected</title>", codes, markers)
     assert not fd.is_blocked(200, b"<html>ok</html>", codes, markers)
+
+
+class FakeResponse:
+    def __init__(self, content, status=200):
+        self.content = content
+        self.status_code = status
+        self.headers = {"Content-Type": "application/octet-stream"}
+
+    def raise_for_status(self):
+        pass
+
+
+class FakeSession:
+    def __init__(self, content=b"PK new"):
+        self.content = content
+        self.calls = 0
+
+    def get(self, url, headers=None, timeout=None):
+        self.calls += 1
+        return FakeResponse(self.content)
+
+
+SETTINGS = fd.FetchSettings(headers={}, retries=0, pause=0)
+
+
+def no_sleep(_):
+    pass
+
+
+def test_fetch_file_keeps_existing_file(tmp_path):
+    (tmp_path / "full_text.docx").write_bytes(b"PK old")
+    session = FakeSession()
+    old = {"file": "full_text.docx", "status": "ok", "sha256": "x"}
+    rec = fd.fetch_file(
+        session, "full_text.docx", "https://x/a", tmp_path, old, SETTINGS, no_sleep
+    )
+    assert rec == old
+    rec = fd.fetch_file(
+        session, "full_text.docx", "https://x/a", tmp_path, None, SETTINGS, no_sleep
+    )
+    assert rec["status"] == "ok"
+    assert rec["note"] == "file already on disk"
+    assert session.calls == 0
+    assert (tmp_path / "full_text.docx").read_bytes() == b"PK old"
+
+
+def test_fetch_file_saves_new_file_and_rejects_bad_content(tmp_path):
+    rec = fd.fetch_file(
+        FakeSession(b"PK new"), "a.docx", "https://x/a", tmp_path, None, SETTINGS,
+        no_sleep,
+    )  # fmt: skip
+    assert rec["status"] == "ok"
+    assert (tmp_path / "a.docx").read_bytes() == b"PK new"
+    rec = fd.fetch_file(
+        FakeSession(b"<html>"), "b.docx", "https://x/b", tmp_path, None, SETTINGS,
+        no_sleep,
+    )  # fmt: skip
+    assert rec["status"] == "invalid"
+    assert not (tmp_path / "b.docx").exists()
+
+
+def test_fetch_file_without_url_is_error(tmp_path):
+    rec = fd.fetch_file(
+        FakeSession(), "a.docx", None, tmp_path, None, SETTINGS, no_sleep
+    )
+    assert rec["status"] == "error"
+
+
+def test_is_valid_content():
+    assert fd.is_valid_content("a.docx", b"PK\x03\x04")
+    assert not fd.is_valid_content("a.docx", b"<html>")
+    assert fd.is_valid_content("page.html", b"<html>")
+    assert not fd.is_valid_content("page.html", b"")

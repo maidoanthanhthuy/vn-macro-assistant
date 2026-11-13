@@ -113,14 +113,19 @@ def nso_heading_level(
 def nso_blocks_to_markdown(
     blocks: Iterable[tuple[str, bool]],
     max_chars: int = config.NSO_MAX_HEADING_CHARS,
+    closing_markers: tuple[str, ...] = config.NSO_CLOSING_MARKERS,
+    closing_heading: str = config.NSO_CLOSING_HEADING,
 ) -> str:
     """Turn (paragraph text, fully bold) pairs into Markdown.
 
     Figure/table captions ("Hình 3.", "Biểu 1.") are dropped together with the short
     bold lines right after them (caption continuation, units such as "%").
+    The first body paragraph that starts with a closing marker gets a level-1
+    `closing_heading` before it (the closing summary has no heading in the source).
     """
     out: list[str] = []
     in_caption = False
+    closing_done = False
     for raw, bold in blocks:
         text = normalize_text(raw).replace("\n", " ")
         if not text or is_junk_line(text):
@@ -132,6 +137,9 @@ def nso_blocks_to_markdown(
         if in_caption and bold and level is None and len(text) <= max_chars:
             continue
         in_caption = False
+        if not level and not closing_done and text.startswith(closing_markers):
+            out.append(f"# {closing_heading}")
+            closing_done = True
         out.append(f"{'#' * level} {text}" if level else text)
     return "\n\n".join(out)
 
@@ -207,6 +215,32 @@ def check_results(
         if res["chars"] < limit:
             problems.append(f"{doc_id}: only {res['chars']} chars (< {limit}); check")
     return problems
+
+
+def warn_missing_closing(
+    docs: Iterable[dict[str, str]],
+    texts: dict[str, str],
+    doc_type: str = config.NSO_REPORT_TYPE,
+    quarter_months: tuple[str, ...] = config.NSO_QUARTER_MONTHS,
+    heading: str = config.NSO_CLOSING_HEADING,
+) -> list[str]:
+    """Warn for quarter-end NSO reports whose closing summary marker was not found."""
+    line = re.compile(rf"^# {re.escape(heading)}$", re.MULTILINE)
+    warnings = []
+    for d in docs:
+        doc_id = d["doc_id"]
+        if (
+            d["doc_type"] == doc_type
+            and d["reference_period"][5:7] in quarter_months
+            and doc_id in texts
+            and not line.search(texts[doc_id])
+        ):
+            warnings.append(
+                f"{doc_id}: quarterly report without closing summary marker "
+                f"{config.NSO_CLOSING_MARKERS}; its summary keeps the last section's "
+                "label (report format changed?)"
+            )
+    return warnings
 
 
 # ---------- I/O ----------
@@ -312,6 +346,10 @@ def main(argv: list[str] | None = None) -> None:
     print("Checks: all passed" if not problems else "Checks FAILED:")
     for p in problems:
         print(f"  - {p}")
+    warnings = warn_missing_closing(docs, texts)
+    print(f"Warnings: {len(warnings)}")
+    for w in warnings:
+        print(f"  - WARNING {w}")
 
 
 if __name__ == "__main__":

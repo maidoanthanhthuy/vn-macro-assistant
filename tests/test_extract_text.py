@@ -1,5 +1,7 @@
 import unicodedata
 
+import pytest
+
 from vnmacro.ingest import extract_text as et
 
 RULE = {"sapo": ".sapo", "body": "div#post", "drop": ["figure", ".meta"]}
@@ -73,3 +75,63 @@ def test_check_results_flags_junk_short_and_missing_answer():
     assert any("expected 3" in p for p in problems)
     assert any("junk" in p for p in problems)
     assert any("only 50 chars" in p for p in problems)
+
+
+def test_site_rule_matches_host_without_www():
+    rules = {"vnba.org.vn": {"body": "div#post_content"}}
+    assert (
+        et.site_rule("https://www.vnba.org.vn/vi/a-1.htm", rules)
+        == rules["vnba.org.vn"]
+    )
+    assert et.site_rule("https://VNBA.org.vn/x", rules)["body"] == "div#post_content"
+
+
+def test_site_rule_raises_for_unknown_host():
+    with pytest.raises(KeyError, match="example.com"):
+        et.site_rule("https://example.com/a", {"vnba.org.vn": {}})
+
+
+def test_nso_blocks_to_markdown_adds_closing_heading_once():
+    blocks = [
+        ("8. Bảo vệ môi trường", True),
+        ("Vi phạm môi trường giảm.", False),
+        ("Khái quát lại, kinh tế ổn định.", False),
+        ("Một là, giữ ổn định vĩ mô.", False),
+        ("Khái quát lại lần nữa.", False),
+    ]
+    md = et.nso_blocks_to_markdown(blocks, closing_markers=("Khái quát lại",),
+                                   closing_heading="Kết luận chung")  # fmt: skip
+    assert md == (
+        "## 8. Bảo vệ môi trường\n\nVi phạm môi trường giảm.\n\n# Kết luận chung\n\n"
+        "Khái quát lại, kinh tế ổn định.\n\nMột là, giữ ổn định vĩ mô.\n\n"
+        "Khái quát lại lần nữa."
+    )
+
+
+def test_nso_blocks_to_markdown_no_marker_no_heading():
+    md = et.nso_blocks_to_markdown([("Văn bản.", False)], closing_markers=("X",))
+    assert md == "Văn bản."
+
+
+def test_warn_missing_closing_only_for_quarter_end_reports():
+    def doc(doc_id, period, doc_type="nso_monthly_report"):
+        return {"doc_id": doc_id, "doc_type": doc_type, "reference_period": period}
+
+    docs = [
+        doc("q_ok", "2026-06"),
+        doc("q_missing", "2026-09"),
+        doc("monthly", "2026-08"),
+        doc("press", "2026-Q3", doc_type="sbv_quarterly_press"),
+        doc("not_extracted", "2026-12"),
+    ]
+    texts = {
+        "q_ok": "## 8. Môi trường\n\nText.\n\n# Kết luận chung\n\nKhái quát lại, ...",
+        "q_missing": "## 8. Môi trường\n\nText. Kết luận chung trong câu.",
+        "monthly": "## 8. Môi trường\n\nText.",
+        "press": "Text.",
+    }
+    warnings = et.warn_missing_closing(
+        docs, texts, "nso_monthly_report", ("03", "06", "09", "12"), "Kết luận chung"
+    )
+    assert len(warnings) == 1
+    assert warnings[0].startswith("q_missing:")

@@ -235,3 +235,37 @@ def test_table_stats_and_report():
     assert ("cpi_monthly", 2, D("2001-12-01"), D("2026-09-01")) in stats
     report = ld.build_report({"KBS": "x"}, stats, [], ["w1"], "DRY RUN")
     assert "Blocking checks failed: 0" in report and "- w1" in report
+
+
+def test_single_value():
+    rows = [{"unit": "%"}, {"unit": ""}, {"unit": "%"}, {}]
+    assert ld.single_value(rows, "unit") == "%"
+    with pytest.raises(ValueError):
+        ld.single_value([{"unit": "%"}, {"unit": "pp"}], "unit")
+    with pytest.raises(ValueError):
+        ld.single_value([{"unit": ""}], "unit")
+
+
+def make_snapshot(root, name, manifest=True):
+    path = root / name
+    path.mkdir()
+    if manifest:
+        (path / "manifest.json").write_text("{}")
+    return path
+
+
+def test_latest_snapshot_picks_newest_dated_folder_with_manifest(tmp_path):
+    make_snapshot(tmp_path, "2026-11-01")
+    newest = make_snapshot(tmp_path, "2026-11-10")
+    make_snapshot(tmp_path, "2026-11-12", manifest=False)  # unfinished run
+    make_snapshot(tmp_path, "notes")  # not a date
+    assert ld.latest_snapshot(tmp_path) == newest
+    assert ld.latest_snapshot(tmp_path, "2026-11-01") == tmp_path / "2026-11-01"
+
+
+def test_latest_snapshot_errors(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        ld.latest_snapshot(tmp_path)
+    make_snapshot(tmp_path, "2026-11-12", manifest=False)
+    with pytest.raises(FileNotFoundError):
+        ld.latest_snapshot(tmp_path, "2026-11-12")

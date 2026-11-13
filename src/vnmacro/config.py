@@ -135,6 +135,15 @@ SITE_RULES: dict[str, dict] = {
     },
 }
 NSO_MAX_HEADING_CHARS = 150  # longer paragraphs are never headings
+# Quarterly NSO reports end with an untitled closing summary starting with this phrase.
+# A level-1 heading (not in the source) is added before it, so its chunks get their own
+# label instead of the heading of the report's last section.
+NSO_CLOSING_MARKERS: tuple[str, ...] = ("Khái quát lại",)
+NSO_CLOSING_HEADING = "Kết luận chung"
+# Reports for these months (quarter ends) must contain the closing summary; a warning is
+# printed when the marker is missing (the report format may have changed).
+NSO_REPORT_TYPE = "nso_monthly_report"
+NSO_QUARTER_MONTHS: tuple[str, ...] = ("03", "06", "09", "12")
 # Checks after extraction
 EXPECTED_DOCUMENTS = 17
 MIN_CHARS: dict[str, int] = {"nso_monthly_report": 20000, "default": 2000}
