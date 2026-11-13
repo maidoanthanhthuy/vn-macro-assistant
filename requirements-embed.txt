@@ -1,0 +1,11 @@
+# Libraries for computing embeddings (python -m vnmacro.rag.embed). Not needed for the
+# tests, CI, the data loaders or querying stored vectors. Install on top of requirements.txt:
+#
+#     pip install -r requirements.txt -r requirements-embed.txt
+#
+# torch comes from the CPU-only index below: the default PyPI wheel bundles CUDA
+# (several GB) and this project runs on CPU. The "+cpu" pin only exists on that index.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.15.0+cpu
+sentence-transformers==6.3.0
+transformers==5.22.2  # model code used by sentence-transformers

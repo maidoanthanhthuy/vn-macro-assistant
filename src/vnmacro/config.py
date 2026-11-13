@@ -165,6 +165,25 @@ REQUIRED_TEXT: dict[str, str] = {
     ),
 }
 
+# RAG load and embeddings (src/vnmacro/rag/load_rag.py, src/vnmacro/rag/embed.py)
+RAG_SCHEMA = "rag"  # vector type and operators live here (sql/rag_schema.sql)
+EMBEDDINGS_DIR = Path("data/processed/embeddings")  # local vector cache
+EMBEDDING_MODEL: dict = {
+    "repo": "AITeamVN/Vietnamese_Embedding_v2",
+    "revision": "18b44161e041bf1d3a333ab5144b5b7b93f914d2",  # Hugging Face commit
+    "dim": 1024,
+    "max_seq_length": 2048,  # passage length the model was trained with
+    "batch_size": 4,  # small batches keep RAM low on CPU
+    "num_threads": 8,  # torch CPU threads (leave cores free)
+}
+NORM_TOLERANCE = 1e-3  # normalized vectors: | ||v|| - 1 | must stay below this
+# Retrieval check: the q10 answer chunk (matched by REQUIRED_TEXT) must be in the top k.
+RETRIEVAL_CHECK: dict = {
+    "query": "Vì sao chỉ số giá tiêu dùng tháng 6/2026 giảm so với tháng trước?",
+    "doc_id": "nso_report_2026_06",
+    "top_k": 5,
+}
+
 # Database load (src/vnmacro/ingest/load_db.py)
 MACRO_START_YEAR = 2000  # World Bank and WEO rows from this year
 PRICE_FIXES_FILE = MANUAL_DIR / "price_fixes.csv"

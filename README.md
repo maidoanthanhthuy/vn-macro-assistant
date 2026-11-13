@@ -31,6 +31,15 @@ pip install -r requirements.txt -r requirements-dev.txt
 cp .env.example .env   # then fill in real values
 ```
 
+`requirements-embed.txt` (CPU-only torch, sentence-transformers) is needed only to
+compute embeddings (`python -m vnmacro.rag.embed`). Tests, CI and the data loaders do not
+need it. Install it on top of the core requirements; the file points pip to the CPU-only
+PyTorch index, so no CUDA packages are downloaded:
+
+```bash
+pip install -r requirements.txt -r requirements-embed.txt
+```
+
 ## Reproduce the data
 
 Raw data is **not** in the repository (only the scripts that fetch it and the hand-made
@@ -58,7 +67,25 @@ docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d 
 
 # 5. Clean, check and load (uses the latest snapshot of each source)
 PYTHONPATH=src python -m vnmacro.ingest.load_db
+
+# 6. RAG documents: fetch, extract text, chunk
+PYTHONPATH=src python -m vnmacro.ingest.fetch_documents
+PYTHONPATH=src python -m vnmacro.ingest.extract_text
+PYTHONPATH=src python -m vnmacro.rag.chunking
+
+# 7. Load chunks into schema rag, embed them and check the vectors
+#    (needs requirements-embed.txt; first run downloads the model, ~2.3 GB)
+pip install -r requirements-embed.txt
+PYTHONPATH=src python -m vnmacro.rag.build
 ```
+
+`vnmacro.rag.build` is the normal way to (re)build the RAG tables. It runs `load_rag`
+(empties and reloads `rag.documents` and `rag.chunks`, which also deletes all rows in
+`rag.chunk_embeddings`), then `embed`, then checks that every chunk has exactly one
+vector. The two steps can be run alone (`python -m vnmacro.rag.load_rag`,
+`python -m vnmacro.rag.embed`), but `embed` must always follow `load_rag`. Vectors are cached in
+`data/processed/embeddings/` by model commit and text hash: a rerun only encodes new or
+changed chunks (762 chunks take about 16 minutes on CPU the first time, seconds after).
 
 A newer snapshot can give different adjusted prices (new corporate actions) and newer
 macro values, so results may differ from the 2026-11-10 snapshot used in this project.
