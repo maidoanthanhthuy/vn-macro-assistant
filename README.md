@@ -13,7 +13,7 @@ numbers and citations. See [docs/SCOPE.md](docs/SCOPE.md).
 docs/                  Scope, schema and design notes
 eval/                  Evaluation set (seed_questions.csv)
 scripts/smoke_tests/   Checks that each data source downloads for Vietnam
-sql/                   Database schemas (schema.sql, rag_schema.sql)
+sql/                   Database schemas and roles (schema.sql, rag_schema.sql, roles.sql)
 src/vnmacro/
   ingest/              Fetch and load data into PostgreSQL / pgvector
   tools/               Text-to-SQL and RAG tools
@@ -115,7 +115,12 @@ Recreate the tables after changing `sql/schema.sql`:
 ```bash
 docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"'
 docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/schema.sql
+PYTHONPATH=src python -m vnmacro.roles apply   # dropping public also drops the reader's grants
 ```
+
+Create or update the read-only role `vnmacro_reader` used by Text-to-SQL (needs
+`DB_READER_PASSWORD` and `DATABASE_URL_READER` in `.env`; safe to rerun):
+`PYTHONPATH=src python -m vnmacro.roles apply`, then `PYTHONPATH=src python -m vnmacro.roles check`.
 
 Create the RAG schema (schema `rag`: documents, chunks, embeddings; `vector` extension),
 first run:

@@ -203,6 +203,27 @@ Design reasons:
    exact nearest neighbours. An approximate index (HNSW / IVFFlat) is worth adding only when
    chunks reach tens of thousands.
 
+## Read-only role for Text-to-SQL
+
+The Text-to-SQL agent connects as `vnmacro_reader` (`sql/roles.sql`, applied with
+`python -m vnmacro.roles apply`; `check` tests the rules below).
+
+- **Can:** connect to the database and `SELECT` from every table in schema `public`,
+  including tables the owner creates later (default privileges).
+- **Cannot:** read schema `rag`; `INSERT`, `UPDATE`, `DELETE` or `TRUNCATE`; create
+  objects in any schema; create temporary tables (`TEMP` is revoked from `PUBLIC`).
+- **Session settings:** `default_transaction_read_only = on`, `statement_timeout = 5s`,
+  `search_path = public`.
+
+Why: two independent layers. The code checks every generated SQL statement before running
+it (Phase 3), and the database refuses anything but reads even if a bad statement gets
+past that check. The privileges are the hard limit; read-only mode and the timeout are
+session defaults the role could change itself, so they add depth but do not replace the
+privileges. The timeout also stops runaway queries.
+
+The load (`load_db`) empties and refills tables with `TRUNCATE` + `COPY`, so the grants
+survive every load. `DROP SCHEMA public CASCADE` removes them: rerun `apply` afterwards.
+
 ## Design choices
 
 - **Few, narrow tables.** A small schema with clear names is easier for Text-to-SQL than a

@@ -203,3 +203,7 @@ PRICE_BAND_PCT: dict[str, float] = {"HOSE": 7.0, "HNX": 10.0}
 BAND_TOLERANCE_PP = 0.1
 YOY_TOLERANCE_PP = 0.01  # max gap between our inflation_yoy and IMF's y/y series
 MIN_STOCK_PRICE_VND = 1000.0  # lower stock prices suggest thousand-VND units
+
+# Read-only role for Text-to-SQL (src/vnmacro/roles.py)
+ROLES_SQL = Path("sql/roles.sql")
+READER_ROLE = "vnmacro_reader"  # must match the role name in sql/roles.sql
