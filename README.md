@@ -13,7 +13,7 @@ numbers and citations. See [docs/SCOPE.md](docs/SCOPE.md).
 docs/                  Scope, schema and design notes
 eval/                  Evaluation set (seed_questions.csv)
 scripts/smoke_tests/   Checks that each data source downloads for Vietnam
-sql/                   Database schema (schema.sql)
+sql/                   Database schemas (schema.sql, rag_schema.sql)
 src/vnmacro/
   ingest/              Fetch and load data into PostgreSQL / pgvector
   tools/               Text-to-SQL and RAG tools
@@ -52,8 +52,9 @@ PYTHONPATH=src python -m vnmacro.ingest.fetch_kbs
 PYTHONPATH=src python -m vnmacro.ingest.fetch_worldbank
 PYTHONPATH=src python -m vnmacro.ingest.fetch_imf
 
-# 4. Create the tables (empty database)
+# 4. Create the tables (empty database): numeric tables, then the RAG schema
 docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/schema.sql
+docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/rag_schema.sql
 
 # 5. Clean, check and load (uses the latest snapshot of each source)
 PYTHONPATH=src python -m vnmacro.ingest.load_db
@@ -81,11 +82,29 @@ docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d 
 
 Recreate the tables after changing `sql/schema.sql`:
 
-> **WARNING: this DELETES ALL DATA in the database** (every table in the `public` schema).
+> **WARNING: this DELETES ALL NUMERIC DATA** (every table in the `public` schema). The `rag`
+> schema is not affected.
 
 ```bash
 docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"'
 docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/schema.sql
+```
+
+Create the RAG schema (schema `rag`: documents, chunks, embeddings; `vector` extension),
+first run:
+
+```bash
+docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/rag_schema.sql
+```
+
+Recreate it after changing `sql/rag_schema.sql`:
+
+> **WARNING: this DELETES ALL RAG DATA** (documents, chunks and embeddings in schema `rag`).
+> The numeric tables in `public` are not affected.
+
+```bash
+docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "DROP SCHEMA rag CASCADE;"'
+docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/rag_schema.sql
 ```
 
 Clean, check and load all data (latest raw snapshots + `data/manual/`). The load empties

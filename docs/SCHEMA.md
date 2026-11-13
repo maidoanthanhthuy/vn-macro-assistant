@@ -4,7 +4,8 @@ Structured data layer for the Text-to-SQL tool (PostgreSQL 16). The DDL is in
 `sql/schema.sql`. Every table and column there has a `COMMENT`, and those comments are what
 the LLM sees when it writes SQL, so keep them in sync with this document.
 
-Documents and embeddings for RAG (pgvector) are not part of this schema yet.
+Documents, chunks and embeddings for RAG live in a separate schema `rag`
+(`sql/rag_schema.sql`); see [RAG schema](#rag-schema).
 
 ## Overview
 
@@ -163,6 +164,44 @@ Expected rows (10):
 - Only CSV rows with `verified = yes` are loaded, so the `verified` column is dropped.
 - Checks: `effective_date >= announced_date`; `direction` agrees with the sign of
   `new_rate - old_rate`.
+
+## RAG schema
+
+DDL: `sql/rag_schema.sql`. It creates schema `rag`, the `vector` extension (installed in
+`rag`) and three tables. Tables are created empty; loading comes in a later step.
+
+| Table | Grain (one row per) | Primary key | Source |
+|---|---|---|---|
+| `rag.documents` | source document | `doc_id` | `data/manual/documents.csv` (verified rows) |
+| `rag.chunks` | chunk x strategy | `chunk_id` (unique `(doc_id, strategy, seq)`) | `chunks.jsonl` |
+| `rag.chunk_embeddings` | chunk x embedding model | `(chunk_id, model_name)` | embedding step |
+
+```mermaid
+erDiagram
+    documents ||--o{ chunks : "doc_id"
+    chunks ||--o{ chunk_embeddings : "chunk_id"
+```
+
+- `rag.documents.period_start` / `period_end` are derived from `reference_period` at load
+  time: `YYYY-MM` = the whole month, `YYYY-Qn` = the whole quarter, `YYYY` = the whole year.
+  A CHECK enforces the `reference_period` format and `period_start <= period_end`.
+- `rag.chunks.strategy` (e.g. `heading_v1`) lets several chunking strategies coexist.
+- `rag.chunk_embeddings.embedding` is `vector(1024)`; the PK includes `model_name`, so
+  vectors from several models can be stored and compared.
+- Foreign keys use `ON DELETE CASCADE`: deleting a document removes its chunks and their
+  embeddings.
+
+Design reasons:
+
+1. **Separate schema `rag`.** The Text-to-SQL tool reads only schema `public`, so it sees
+   just the numeric tables and never writes SQL against document text or vectors. The two
+   parts can also be dropped and recreated independently. The `vector` extension is
+   installed in `rag` (not `public`) so that `DROP SCHEMA public CASCADE` cannot drop the
+   vector type. Vector queries therefore need `rag` on the `search_path` (or
+   `OPERATOR(rag.<=>)`).
+2. **No vector index yet.** With a few hundred chunks, an exact full scan is fast and gives
+   exact nearest neighbours. An approximate index (HNSW / IVFFlat) is worth adding only when
+   chunks reach tens of thousands.
 
 ## Design choices
 
