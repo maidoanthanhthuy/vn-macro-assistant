@@ -165,8 +165,8 @@ embeddings, so deployment needs a single database container.
 
 ## 7. Evaluation plan (summary)
 
-- About 100 questions with reference answers, grown from the seed questions in
-  `eval/seed_questions.csv`.
+- About 100 test questions with reference answers, written fresh in Phase 5 (not taken
+  from the seed questions; see "Dev set vs test set" below).
 - Target mix: ~40 numeric, ~40 interpretation, ~10 hybrid, ~10 out-of-scope.
 - Metrics: routing accuracy, SQL execution accuracy, retrieval recall@k, answer faithfulness,
   refusal accuracy, latency, cost per question.
@@ -179,6 +179,13 @@ embeddings, so deployment needs a single database container.
 - Scoring the first version: q11, q15 and q17 are marked "not applicable (requires 2022+
   documents)" and are not counted in any score. They become scored questions only if the
   optional 2022+ document update (section 2.2) is done.
+
+### Dev set vs test set
+
+- **Dev set:** the 22 seed questions in `eval/seed_questions.csv`. Use them freely while
+  building and tuning prompts.
+- **Test set:** the ~100 questions, written fresh in Phase 5. Never used while tuning. Only
+  test-set scores are reported in the README.
 
 ### Future work / not in first version
 
