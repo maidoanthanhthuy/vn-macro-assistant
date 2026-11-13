@@ -112,10 +112,14 @@ Recreate the tables after changing `sql/schema.sql`:
 > **WARNING: this DELETES ALL NUMERIC DATA** (every table in the `public` schema). The `rag`
 > schema is not affected.
 
+The last step re-applies the read-only role, because `DROP SCHEMA public CASCADE` also
+removes `vnmacro_reader`'s grants. Each step runs only if the previous one succeeded.
+
 ```bash
-docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"'
-docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/schema.sql
-PYTHONPATH=src python -m vnmacro.roles apply   # dropping public also drops the reader's grants
+docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"' \
+  && docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/schema.sql \
+  && PYTHONPATH=src python -m vnmacro.ingest.load_db \
+  && PYTHONPATH=src python -m vnmacro.roles apply
 ```
 
 Create or update the read-only role `vnmacro_reader` used by Text-to-SQL (needs
