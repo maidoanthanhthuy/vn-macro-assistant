@@ -207,3 +207,29 @@ MIN_STOCK_PRICE_VND = 1000.0  # lower stock prices suggest thousand-VND units
 # Read-only role for Text-to-SQL (src/vnmacro/roles.py)
 ROLES_SQL = Path("sql/roles.sql")
 READER_ROLE = "vnmacro_reader"  # must match the role name in sql/roles.sql
+
+# Schema context for Text-to-SQL (vnmacro.sql_agent.context)
+SQL_CONTEXT_SCHEMA = "public"
+# Tables listed in full instead of sample rows.
+SQL_CONTEXT_FULL_TABLES: tuple[str, ...] = ("symbols", "indicators")
+# table -> (period column, optional group column, list only groups whose last period
+# differs from the table's last period). Without the flag every group is listed.
+SQL_CONTEXT_COVERAGE: dict[str, tuple[str, str | None, bool]] = {
+    "daily_prices": ("date", "symbol", True),
+    "macro_annual": ("year", "indicator_code", False),
+    "cpi_monthly": ("month", None, False),
+    "policy_events": ("announced_date", None, False),
+}
+SQL_CONTEXT_SAMPLE_ROWS = 3
+# table -> (key column, key values): samples are these keys on the latest period
+# (two stocks and one index, so both VND and points appear).
+SQL_CONTEXT_SAMPLE_KEYS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "daily_prices": ("symbol", ("FPT", "VCB", "VNINDEX")),
+}
+# Columns left out of sample rows (still described under Columns).
+SQL_CONTEXT_SAMPLE_EXCLUDE: dict[str, tuple[str, ...]] = {
+    "policy_events": ("source_url", "notes"),
+}
+SQL_CONTEXT_SAMPLE_DECIMALS = 2  # sample numbers are shown with at most this many
+SQL_CONTEXT_MAX_VALUE_CHARS = 80  # longer sample values are cut with "..."
+SQL_CONTEXT_CHARS_PER_TOKEN = 4  # rough token estimate for the preview
