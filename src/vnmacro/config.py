@@ -242,3 +242,38 @@ SQL_CONTEXT_MAX_VALUE_CHARS = 80  # longer sample values are cut with "..."
 SQL_CONTEXT_CHARS_PER_TOKEN = 4  # rough token estimate for the preview
 SQL_CONVENTIONS_FILE = Path("prompts/sql_conventions.md")  # SQL rules for the LLM
 SQL_EXAMPLES_FILE = Path("prompts/sql_examples.md")  # few-shot SQL examples
+SQL_ROLE_FILE = Path("prompts/sql_role.md")  # short role instructions for the LLM
+
+# Text-to-SQL pipeline (src/vnmacro/sql_agent/pipeline.py)
+SQL_MAX_ROWS = 200  # LIMIT is set or lowered to this; at most this many rows fetched
+SQL_STATEMENT_TIMEOUT = "5s"  # SET LOCAL before every generated query
+SQL_MAX_LLM_CALLS = 2  # first try + one retry with the check or database error
+SQL_ALLOWED_SCHEMAS: tuple[str, ...] = ("public",)
+PROMPT_VERSION_CHARS = 12  # length of the prompt hash stored in app.query_log
+LOG_COMPONENT_TEXT_TO_SQL = "text_to_sql"
+# Functions a generated query may never call (lower case). Exact names, then prefixes.
+# The *_to_xml functions and dblink run SQL given as a string, which the parser cannot
+# inspect; the others read files, sleep, signal backends, change settings or sequences.
+SQL_BLOCKED_FUNCTIONS: tuple[str, ...] = (
+    "set_config", "current_setting", "pg_sleep", "pg_sleep_for", "pg_sleep_until",
+    "pg_read_file", "pg_read_binary_file", "pg_ls_dir", "pg_stat_file",
+    "pg_terminate_backend", "pg_cancel_backend", "pg_reload_conf", "pg_rotate_logfile",
+    "lo_import", "lo_export", "dblink", "dblink_exec", "dblink_connect",
+    "query_to_xml", "query_to_xml_and_xmlschema", "query_to_xmlschema",
+    "cursor_to_xml", "table_to_xml", "schema_to_xml", "database_to_xml",
+    "nextval", "setval", "currval", "lastval", "txid_current", "pg_notify",
+    "pg_switch_wal", "pg_promote", "pg_export_snapshot",
+)  # fmt: skip
+SQL_BLOCKED_FUNCTION_PREFIXES: tuple[str, ...] = (
+    "pg_read_", "pg_ls_", "pg_file_", "lo_", "dblink", "pg_advisory",
+    "pg_try_advisory", "pg_logical_", "pg_replication_", "pg_create_", "pg_drop_",
+    "pg_backup_", "pg_terminate_", "pg_cancel_", "pg_sleep",
+)  # fmt: skip
+
+# LLM calls (src/vnmacro/llm.py). Model, key and optional base URL come from .env.
+LLM_TIMEOUT_SECONDS = 30.0  # per API call
+LLM_MAX_RETRIES = 2  # SDK retries on connection errors, timeouts, 429 and 5xx
+# USD per 1 million tokens, per model (OpenAI Standard tier, checked 2026-11-15).
+LLM_PRICES_USD_PER_MTOK: dict[str, dict[str, float]] = {
+    "gpt-6-luna": {"input": 0.10, "cached_input": 0.01, "output": 0.50},
+}

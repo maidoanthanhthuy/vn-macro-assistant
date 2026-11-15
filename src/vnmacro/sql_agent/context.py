@@ -397,21 +397,28 @@ def fetch_coverage(
     return out
 
 
+def fetch_schema(
+    url: str, schema: str = config.SQL_CONTEXT_SCHEMA
+) -> tuple[list[Table], list[Coverage]]:
+    """Connect as the read-only role and read tables and coverage once."""
+    import psycopg
+
+    with psycopg.connect(url) as conn:
+        conn.read_only = True
+        return fetch_tables(conn, schema), fetch_coverage(conn, schema)
+
+
 def schema_context_from_db(
     url: str | None = None, schema: str = config.SQL_CONTEXT_SCHEMA
 ) -> str:
     """Connect as the read-only role and return the schema context text."""
-    import psycopg
     from dotenv import load_dotenv
 
     load_dotenv()
     url = url or os.environ.get("DATABASE_URL_READER")
     if not url:
         raise SystemExit("DATABASE_URL_READER is not set in .env")
-    with psycopg.connect(url) as conn:
-        conn.read_only = True
-        tables = fetch_tables(conn, schema)
-        coverage = fetch_coverage(conn, schema)
+    tables, coverage = fetch_schema(url, schema)
     return build_schema_context(schema, tables, coverage)
 
 

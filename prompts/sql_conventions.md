@@ -54,11 +54,12 @@ Rules for writing PostgreSQL queries against the database described above.
   vintage with them. Never compute a forecast in SQL.
 - Inflation = year-over-year % change of the CPI index versus the same month of the
   previous year (cpi_monthly.inflation_yoy).
-- If the asked month is not in cpi_monthly yet, the answer will come from the NSO monthly
-  report (documents); the query returns the latest available month instead of guessing.
+- If the asked month is not in cpi_monthly yet, set cannot_answer = true and give the
+  latest month in cpi_monthly in reason; the answer will come from the NSO monthly report
+  (documents).
 
 ## Missing data
-- If the data cannot answer the question (period outside the data range, indicator not
-  in the database), do not guess or estimate. Either return a query that shows the
-  available range (e.g. MIN/MAX of the period column), or report that the question
-  cannot be answered with SQL.
+- If the data cannot answer the question (topic or indicator not in the database, period
+  outside the data range), do not guess or estimate: set cannot_answer = true, sql = null,
+  and state the reason in reason (for a period outside the data, give the available range
+  from the data coverage above).
