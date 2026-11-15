@@ -74,3 +74,23 @@ ORDER BY symbol, date;
 SELECT month, cpi_index, round(inflation_yoy, 2) AS inflation_yoy_pct
 FROM cpi_monthly
 WHERE month = '2026-09-01';
+
+-- q23: VHM % change in 2018. First period with data: no close before 2018, so the return
+-- starts from the first close in 2018 (2018-05-17) and the period is incomplete.
+WITH start_before AS (
+    SELECT date, close FROM daily_prices
+    WHERE symbol = 'VHM' AND date < '2018-01-01' ORDER BY date DESC LIMIT 1
+), start_in AS (
+    SELECT date, close FROM daily_prices
+    WHERE symbol = 'VHM' AND date BETWEEN '2018-01-01' AND '2018-12-31'
+    ORDER BY date LIMIT 1
+), end_row AS (
+    SELECT date, close FROM daily_prices
+    WHERE symbol = 'VHM' AND date BETWEEN '2018-01-01' AND '2018-12-31'
+    ORDER BY date DESC LIMIT 1
+)
+SELECT coalesce(b.date, i.date) AS start_date, coalesce(b.close, i.close) AS start_close,
+       e.date AS end_date, e.close AS end_close,
+       round((e.close / coalesce(b.close, i.close) - 1) * 100, 2) AS pct_change,
+       b.date IS NOT NULL AS full_period
+FROM end_row e CROSS JOIN start_in i LEFT JOIN start_before b ON TRUE;
