@@ -233,3 +233,5 @@ SQL_CONTEXT_SAMPLE_EXCLUDE: dict[str, tuple[str, ...]] = {
 SQL_CONTEXT_SAMPLE_DECIMALS = 2  # sample numbers are shown with at most this many
 SQL_CONTEXT_MAX_VALUE_CHARS = 80  # longer sample values are cut with "..."
 SQL_CONTEXT_CHARS_PER_TOKEN = 4  # rough token estimate for the preview
+SQL_CONVENTIONS_FILE = Path("prompts/sql_conventions.md")  # SQL rules for the LLM
+SQL_EXAMPLES_FILE = Path("prompts/sql_examples.md")  # few-shot SQL examples

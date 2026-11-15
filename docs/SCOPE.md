@@ -105,6 +105,9 @@ first version is built, evaluated and deployed with the MVP documents above.
 
 - "Latest month" / "tháng gần nhất" = the most recent report available in the database, not today's date.
 - Returns are close-to-close, in percent, using the last trading day of each period.
+- If there is no close before the period (first period with data), the return starts from
+  the first close in the period; the answer states the actual start date and that the
+  period is incomplete.
 - Returns use adjusted prices when the source provides them. If only unadjusted prices
   are available, the answer states this limitation (returns across dividends, bonus
   shares or splits may be distorted).
@@ -131,6 +134,8 @@ first version is built, evaluated and deployed with the MVP documents above.
   - Future years: IMF WEO, always called a forecast with its vintage.
   - Monthly inflation: IMF CPI.
 - If the user names a source, use exactly that source.
+- The conventions that apply to Text-to-SQL are written for the LLM in
+  prompts/sql_conventions.md; when a convention changes, update both places.
 
 ## 5. Architecture
 
