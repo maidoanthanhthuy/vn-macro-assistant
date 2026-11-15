@@ -61,9 +61,12 @@ PYTHONPATH=src python -m vnmacro.ingest.fetch_kbs
 PYTHONPATH=src python -m vnmacro.ingest.fetch_worldbank
 PYTHONPATH=src python -m vnmacro.ingest.fetch_imf
 
-# 4. Create the tables (empty database): numeric tables, then the RAG schema
+# 4. Create the tables (empty database): numeric tables, RAG schema, app schema (query
+#    log), then the database roles (needs the DB_*_PASSWORD and DATABASE_URL_* in .env)
 docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/schema.sql
 docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/rag_schema.sql
+docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/app_schema.sql
+PYTHONPATH=src python -m vnmacro.roles apply
 
 # 5. Clean, check and load (uses the latest snapshot of each source)
 PYTHONPATH=src python -m vnmacro.ingest.load_db
@@ -112,8 +115,9 @@ Recreate the tables after changing `sql/schema.sql`:
 > **WARNING: this DELETES ALL NUMERIC DATA** (every table in the `public` schema). The `rag`
 > schema is not affected.
 
-The last step re-applies the read-only role, because `DROP SCHEMA public CASCADE` also
-removes `vnmacro_reader`'s grants. Each step runs only if the previous one succeeded.
+The last step re-applies the database roles, because `DROP SCHEMA public CASCADE` also
+removes `vnmacro_reader`'s grants. The query log in schema `app` is not affected. Each step
+runs only if the previous one succeeded.
 
 ```bash
 docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"' \
@@ -122,8 +126,17 @@ docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d 
   && PYTHONPATH=src python -m vnmacro.roles apply
 ```
 
-Create or update the read-only role `vnmacro_reader` used by Text-to-SQL (needs
-`DB_READER_PASSWORD` and `DATABASE_URL_READER` in `.env`; safe to rerun):
+Create the app schema (schema `app`: the agent's query log). Safe to rerun; it never
+deletes log rows. Run it before `vnmacro.roles apply`, which grants the logger access:
+
+```bash
+docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sql/app_schema.sql
+```
+
+Create or update the database roles (safe to rerun): `vnmacro_reader` (read-only, used by
+Text-to-SQL) and `vnmacro_logger` (insert-only, writes the query log). Needs
+`DB_READER_PASSWORD`, `DATABASE_URL_READER`, `DB_LOGGER_PASSWORD` and
+`DATABASE_URL_LOGGER` in `.env`:
 `PYTHONPATH=src python -m vnmacro.roles apply`, then `PYTHONPATH=src python -m vnmacro.roles check`.
 
 Create the RAG schema (schema `rag`: documents, chunks, embeddings; `vector` extension),

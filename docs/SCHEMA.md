@@ -5,7 +5,8 @@ Structured data layer for the Text-to-SQL tool (PostgreSQL 16). The DDL is in
 the LLM sees when it writes SQL, so keep them in sync with this document.
 
 Documents, chunks and embeddings for RAG live in a separate schema `rag`
-(`sql/rag_schema.sql`); see [RAG schema](#rag-schema).
+(`sql/rag_schema.sql`); see [RAG schema](#rag-schema). The agent's query log lives in
+schema `app` (`sql/app_schema.sql`); see [App schema and logger role](#app-schema-and-logger-role).
 
 ## Overview
 
@@ -210,7 +211,7 @@ The Text-to-SQL agent connects as `vnmacro_reader` (`sql/roles.sql`, applied wit
 
 - **Can:** connect to the database and `SELECT` from every table in schema `public`,
   including tables the owner creates later (default privileges).
-- **Cannot:** read schema `rag`; `INSERT`, `UPDATE`, `DELETE` or `TRUNCATE`; create
+- **Cannot:** read schemas `rag` and `app`; `INSERT`, `UPDATE`, `DELETE` or `TRUNCATE`; create
   objects in any schema; create temporary tables (`TEMP` is revoked from `PUBLIC`).
 - **Session settings:** `default_transaction_read_only = on`, `statement_timeout = 5s`,
   `search_path = public`.
@@ -223,6 +224,49 @@ privileges. The timeout also stops runaway queries.
 
 The load (`load_db`) empties and refills tables with `TRUNCATE` + `COPY`, so the grants
 survive every load. `DROP SCHEMA public CASCADE` removes them: rerun `apply` afterwards.
+
+## App schema and logger role
+
+DDL: `sql/app_schema.sql` (safe to rerun: `CREATE ... IF NOT EXISTS` only, never deletes
+log rows; a column change needs an explicit `ALTER TABLE`). Privileges: `sql/roles.sql`.
+
+| Table | Grain (one row per) | Primary key | Written by |
+|---|---|---|---|
+| `app.query_log` | request to an agent component (all its LLM attempts) | `id` (identity) | `vnmacro_logger` |
+
+Columns: `run_id` (uuid, unique; see below), `created_at`, `component` (e.g. `text_to_sql`), `question`, `model`,
+`prompt_version` (short hash of schema context + conventions + examples), `status`
+(`ok`, `cannot_answer`, `blocked`, `error`), `final_sql`, `attempts` (LLM calls),
+`sql_attempts` (JSON array: each SQL tried and its error), `error`, `row_count`,
+`latency_ms`, `input_tokens`, `cached_input_tokens`, `output_tokens`, `cost_usd`.
+CHECKs: `ok` needs `final_sql`, `error` needs `error`, cached tokens <= input tokens,
+counts >= 0, `sql_attempts` is an array.
+
+The agent writes the log as `vnmacro_logger`:
+
+- **Can:** connect; `USAGE` on schema `app`; `INSERT` into `app.query_log`; draw ids from
+  its sequence.
+- **Cannot:** read `app.query_log` (so `INSERT ... RETURNING` is not allowed either);
+  read or write anything in `public` or `rag`; create objects or temporary tables.
+- **Session settings:** `statement_timeout = 5s`, `search_path = app`.
+
+Why:
+
+1. **Separate schema `app`.** `DROP SCHEMA public CASCADE` (recreating the numeric tables)
+   leaves the log intact, and the Text-to-SQL schema context, built from schema `public`
+   only, never shows it. `vnmacro_reader` has no access to `app`.
+2. **Insert-only role.** Questions may hold personal data. A leaked or misused app
+   credential can add rows but cannot read other users' questions or touch the data.
+   Only the owner reads the log (evaluation, cost tracking).
+3. **One row per request, attempts in JSON.** Retries stay with their request, and the
+   token and cost totals sum without joins. `prompt_version` ties each row to the exact
+   prompt prefix, so results can be compared across prompt changes.
+4. **`run_id` made by the code.** The logger cannot use `INSERT ... RETURNING id`, so
+   the Python code creates a uuid4 before the INSERT and keeps it. User feedback
+   (thumbs up/down, Phase 7) will refer to this `run_id`; `id` stays an internal key.
+
+Limit: PostgreSQL catalogs are readable by every role, so `vnmacro_reader` can still see
+that `app.query_log` exists (name and columns), but not its rows.
 
 ## Design choices
 

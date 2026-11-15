@@ -1,9 +1,14 @@
--- Read-only role for the Text-to-SQL agent (docs/SCHEMA.md, "Read-only role for
--- Text-to-SQL"). Safe to run many times. Contains no password: the password is set by
--- `python -m vnmacro.roles apply`, which runs this file as the database owner.
+-- Database roles for the agent (docs/SCHEMA.md, "Read-only role for Text-to-SQL" and
+-- "App schema and logger role"). Safe to run many times. Contains no passwords: they
+-- are set by `python -m vnmacro.roles apply`, which runs this file as the owner.
 --
--- The role may only read the tables in schema public. It has no access to schema rag,
--- cannot write, cannot create objects, and cannot create temporary tables.
+-- vnmacro_reader may only read the tables in schema public. It has no access to
+-- schemas rag and app, cannot write, cannot create objects or temporary tables.
+--
+-- vnmacro_logger may only INSERT into app.query_log. It cannot read the log (other
+-- users' questions), has no access to schemas public and rag, and cannot create
+-- objects or temporary tables. Run sql/app_schema.sql before this file; the app
+-- grants are skipped while schema app does not exist.
 
 -- Role (LOGIN, no other attributes)
 DO $$
@@ -48,6 +53,57 @@ BEGIN
     IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'rag') THEN
         REVOKE ALL ON SCHEMA rag FROM vnmacro_reader;
         REVOKE ALL ON ALL TABLES IN SCHEMA rag FROM vnmacro_reader;
+    END IF;
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- vnmacro_logger: INSERT into app.query_log, nothing else
+-- ---------------------------------------------------------------------------
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'vnmacro_logger') THEN
+        CREATE ROLE vnmacro_logger LOGIN;
+    END IF;
+END
+$$;
+ALTER ROLE vnmacro_logger LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT
+    NOREPLICATION NOBYPASSRLS;
+ALTER ROLE vnmacro_logger SET statement_timeout = '5s';
+ALTER ROLE vnmacro_logger SET search_path = app;
+
+-- Database: connect only (TEMP is already revoked from PUBLIC above).
+DO $$
+BEGIN
+    EXECUTE format('REVOKE ALL ON DATABASE %I FROM vnmacro_logger', current_database());
+    EXECUTE format('GRANT CONNECT ON DATABASE %I TO vnmacro_logger', current_database());
+END
+$$;
+
+-- Schema public: no access.
+REVOKE ALL ON SCHEMA public FROM vnmacro_logger;
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM vnmacro_logger;
+
+-- Schemas rag and app (skipped when a schema does not exist yet).
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'rag') THEN
+        REVOKE ALL ON SCHEMA rag FROM vnmacro_logger;
+        REVOKE ALL ON ALL TABLES IN SCHEMA rag FROM vnmacro_logger;
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'app') THEN
+        -- Nobody but the owner and the grants below.
+        REVOKE ALL ON SCHEMA app FROM PUBLIC, vnmacro_reader, vnmacro_logger;
+        REVOKE ALL ON ALL TABLES IN SCHEMA app FROM PUBLIC, vnmacro_reader, vnmacro_logger;
+        REVOKE ALL ON ALL SEQUENCES IN SCHEMA app
+            FROM PUBLIC, vnmacro_reader, vnmacro_logger;
+        -- Logger: insert rows (no SELECT, so no INSERT ... RETURNING) and draw ids.
+        GRANT USAGE ON SCHEMA app TO vnmacro_logger;
+        GRANT INSERT ON app.query_log TO vnmacro_logger;
+        EXECUTE format('GRANT USAGE ON SEQUENCE %s TO vnmacro_logger',
+                       pg_get_serial_sequence('app.query_log', 'id'));
+    ELSE
+        RAISE NOTICE 'schema app does not exist: run sql/app_schema.sql, then apply again';
     END IF;
 END
 $$;

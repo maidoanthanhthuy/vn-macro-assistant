@@ -207,6 +207,13 @@ MIN_STOCK_PRICE_VND = 1000.0  # lower stock prices suggest thousand-VND units
 # Read-only role for Text-to-SQL (src/vnmacro/roles.py)
 ROLES_SQL = Path("sql/roles.sql")
 READER_ROLE = "vnmacro_reader"  # must match the role name in sql/roles.sql
+LOGGER_ROLE = "vnmacro_logger"  # must match the role name in sql/roles.sql
+# role -> (.env variable with its password, .env variable with its connection URL)
+DB_ROLE_ENV: dict[str, tuple[str, str]] = {
+    READER_ROLE: ("DB_READER_PASSWORD", "DATABASE_URL_READER"),
+    LOGGER_ROLE: ("DB_LOGGER_PASSWORD", "DATABASE_URL_LOGGER"),
+}
+APP_SCHEMA_SQL = Path("sql/app_schema.sql")  # schema app: query log
 
 # Schema context for Text-to-SQL (vnmacro.sql_agent.context)
 SQL_CONTEXT_SCHEMA = "public"
