@@ -21,3 +21,6 @@ models/
 *.joblib
 *.h5
 mlruns/
+
+# Dev-set evaluation runs (local only)
+eval/runs/

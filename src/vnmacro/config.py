@@ -277,3 +277,30 @@ LLM_MAX_RETRIES = 2  # SDK retries on connection errors, timeouts, 429 and 5xx
 LLM_PRICES_USD_PER_MTOK: dict[str, dict[str, float]] = {
     "gpt-6-luna": {"input": 0.10, "cached_input": 0.01, "output": 0.50},
 }
+
+# Dev-set evaluation of Text-to-SQL (src/vnmacro/eval/run_sql_dev.py)
+SEED_QUESTIONS_FILE = Path("eval/seed_questions.csv")
+MANUAL_CHECKS_SQL = Path("sql/manual_checks.sql")
+EVAL_RUNS_DIR = Path("eval/runs")  # gitignored: dev results stay local
+EVAL_REL_TOL = 0.001  # 0.1% relative tolerance for numeric key values
+# Hybrid questions whose SQL part depends on RAG (e.g. the month): shown as "phase 4".
+EVAL_PHASE4_IDS: tuple[str, ...] = ("q16",)
+EVAL_NOTE_MIN_CHARS = 60  # seed notes longer than this are printed with the result
+# Key values of each reference answer: (columns, "first" row or "all" rows). A question
+# passes if every key value appears somewhere in the agent's result.
+EVAL_SQL_KEYS: dict[str, tuple[tuple[str, ...], str]] = {
+    "q01": (("date", "close"), "first"),
+    "q02": (("pct_change",), "first"),
+    "q03": (("symbol", "pct_change"), "first"),
+    "q04": (("gdp_growth_pct",), "first"),
+    "q05": (("avg_inflation_pct",), "first"),
+    "q06": (("avg_daily_volume",), "first"),
+    "q07": (("pct_change",), "first"),
+    "q08": (("gdp_growth_pct", "inflation_pct"), "all"),
+    "q15": (("pct_change",), "first"),
+    "q16": (("symbol", "pct_change"), "all"),
+    "q17": (("n_hike_decisions", "pct_change"), "first"),
+    "q21": (("gdp_growth_pct", "vintage"), "first"),
+    "q22": (("gdp_growth_pct", "vintage"), "first"),
+    "q23": (("start_date", "pct_change"), "first"),
+}

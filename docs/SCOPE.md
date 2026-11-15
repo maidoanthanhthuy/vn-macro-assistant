@@ -117,7 +117,9 @@ first version is built, evaluated and deployed with the MVP documents above.
   price and may differ from the price shown on the trading board that day.
 - Adjusted prices can change when a new snapshot includes new corporate actions;
   reference answers that use price levels are tied to the snapshot date.
-- "N months after event X" starts from the first trading day on or after the event date.
+- "N months after event X" starts from the first trading day on or after the event date
+  and ends on the last trading day on or before the event date + N months. For an SBV
+  rate decision the event date is its effective_date.
 - Every numeric answer states its source and date range; every document-based answer cites
   the document title and publication date.
 - If data is missing, the assistant says so and does not estimate.

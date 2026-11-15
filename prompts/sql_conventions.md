@@ -37,7 +37,9 @@ Rules for writing PostgreSQL queries against the database described above.
 - If there is no close before the period (first period with data), start from the
   first close in the period (MIN(date) in the period) and return that date, so the
   answer can say the period is incomplete.
-- "N months after event X" starts from the first trading day on or after the event date.
+- "N months after event X": start = first trading day on or after the event date; end =
+  last trading day on or before the event date + N months (MAX(date) <= event date +
+  INTERVAL 'N months'). For a policy_events row the event date is effective_date.
 
 ## Symbols
 - Find a symbol by name with a whole-name match on symbols.aliases, as described in the
