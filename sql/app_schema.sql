@@ -77,6 +77,17 @@ CREATE TABLE IF NOT EXISTS app.feedback (
 
 CREATE INDEX IF NOT EXISTS feedback_request_id_idx ON app.feedback (request_id);
 
+-- Added for the user test: anonymous app session (random uuid4 made when the app is
+-- opened, kept only in the Streamlit session). NULL for rows written outside the app.
+ALTER TABLE app.query_log ADD COLUMN IF NOT EXISTS session_id UUID;
+ALTER TABLE app.feedback ADD COLUMN IF NOT EXISTS session_id UUID;
+CREATE INDEX IF NOT EXISTS query_log_session_id_idx ON app.query_log (session_id);
+CREATE INDEX IF NOT EXISTS feedback_session_id_idx ON app.feedback (session_id);
+COMMENT ON COLUMN app.query_log.session_id IS
+    'Anonymous app session: random uuid4 made when the Streamlit app is opened, not linked to any user data. NULL outside the app (CLI, eval).';
+COMMENT ON COLUMN app.feedback.session_id IS
+    'Anonymous app session of the feedback (same value as app.query_log.session_id); NULL for rows written before the column existed.';
+
 COMMENT ON TABLE app.feedback IS
     'One row per thumbs up/down given in the app. Written by vnmacro_logger (INSERT only); read by the owner. Joined to app.query_log on request_id (no foreign key: request_id is not unique there).';
 COMMENT ON COLUMN app.feedback.request_id IS

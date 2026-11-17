@@ -31,6 +31,7 @@ def test_feedback_row():
     rid = str(uuid.uuid4())
     assert feedback_row(rid, "up", "  hay  ") == {
         "request_id": rid,
+        "session_id": None,
         "rating": "up",
         "comment": "hay",
     }
@@ -41,6 +42,10 @@ def test_feedback_row():
         feedback_row(rid, "meh", None)
     with pytest.raises(ValueError):
         feedback_row("not-a-uuid", "up", None)
+    sid = str(uuid.uuid4())
+    assert feedback_row(rid, "up", None, sid)["session_id"] == sid
+    with pytest.raises(ValueError):
+        feedback_row(rid, "up", None, "not-a-uuid")
 
 
 def test_data_note():

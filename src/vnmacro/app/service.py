@@ -15,8 +15,8 @@ SELECT (SELECT max(date) FROM public.daily_prices),
        (SELECT max(reference_period) FROM rag.documents WHERE doc_type = %(doc_type)s)
 """
 _FEEDBACK_SQL = (
-    "INSERT INTO app.feedback (request_id, rating, comment) "
-    "VALUES (%(request_id)s, %(rating)s, %(comment)s)"
+    "INSERT INTO app.feedback (request_id, session_id, rating, comment) "
+    "VALUES (%(request_id)s, %(session_id)s, %(rating)s, %(comment)s)"
 )
 
 

@@ -106,7 +106,8 @@ def test_route_ok_logs_decision():
     assert calls[0][-1] == {"role": "user", "content": "Today: 2026-11-17\nQuestion: q"}
     assert res.cost_usd == pytest.approx((20 * 0.10 + 80 * 0.01 + 10 * 0.50) / 1e6)
     row = logs[0]
-    assert set(row) | {"request_id"} == set(LOG_COLUMNS) and row["question"] == "q"
+    assert set(row) | {"request_id", "session_id"} == set(LOG_COLUMNS)
+    assert row["question"] == "q"
     assert row["component"] == "router" and row["final_sql"] is None
     step = row["sql_attempts"][0]
     assert step["route"] == "rag" and step["period_start"] == "2026-06-01"

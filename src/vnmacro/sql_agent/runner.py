@@ -18,6 +18,7 @@ LOG_COLUMNS: tuple[str, ...] = (
     "run_id", "component", "question", "model", "prompt_version", "status",
     "final_sql", "attempts", "sql_attempts", "error", "row_count", "latency_ms",
     "input_tokens", "cached_input_tokens", "output_tokens", "cost_usd", "request_id",
+    "session_id",
 )  # fmt: skip
 
 
@@ -64,7 +65,8 @@ def run_select(
 def write_log(url: str, row: dict[str, Any]) -> None:
     """Insert one app.query_log row as the logger (no RETURNING); warn on failure.
 
-    Columns missing from row (e.g. request_id outside the agent) are inserted as NULL.
+    Columns missing from row (e.g. request_id / session_id outside the agent) are
+    inserted as NULL.
     """
     try:
         from psycopg import sql

@@ -1,4 +1,5 @@
 import datetime as dt
+import threading
 from types import SimpleNamespace
 
 from vnmacro import config
@@ -87,11 +88,21 @@ def test_period_notes():
     assert period_notes(ResolvedPeriod(None, None)) == []
 
 
-def test_request_log_adds_request_id():
+def test_request_log_adds_request_and_session_ids():
     rows = []
-    log = RequestLog(rows.append, "rid")
+    log = RequestLog(rows.append, "rid", "sid")
     log({"a": 1})
-    assert rows == [{"a": 1, "request_id": "rid"}]
+    assert rows == [{"a": 1, "request_id": "rid", "session_id": "sid"}]
+
+
+def test_request_log_ids_are_per_thread():
+    log = RequestLog(lambda row: None, "main", "s-main")
+    seen = []
+    t = threading.Thread(target=lambda: seen.append((log.request_id, log.session_id)))
+    t.start()
+    t.join()
+    assert seen == [(None, None)]
+    assert (log.request_id, log.session_id) == ("main", "s-main")
 
 
 def test_retrieval_log_row():
@@ -167,3 +178,11 @@ def test_on_step_reports_each_step_in_order():
     agent, _, _, _ = make("out_of_scope", "none")
     agent.ask("Q", on_step=steps.append)
     assert steps == ["route", "answer"]
+
+
+def test_session_id_goes_to_every_log_row():
+    agent, rows, _, _ = make("both", rag_query="CPI?")
+    agent.ask("Q", session_id="sid")
+    assert rows and {r["session_id"] for r in rows} == {"sid"}
+    agent.ask_rag_only("Q")
+    assert rows[-1]["session_id"] is None  # baseline runs are not app sessions

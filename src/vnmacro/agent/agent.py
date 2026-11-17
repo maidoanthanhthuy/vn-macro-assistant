@@ -2,7 +2,8 @@
 
 For `both`, documents are searched first and the resolved period (e.g. the newest NSO
 report's month) is passed to Text-to-SQL with the question. Every step writes one
-app.query_log row; all rows of one question share its request_id.
+app.query_log row; all rows of one question share its request_id (and the app's
+anonymous session_id, if given).
 
     PYTHONPATH=src python -m vnmacro.agent "Lạm phát tháng gần nhất là bao nhiêu?"
 """
@@ -10,6 +11,7 @@ app.query_log row; all rows of one question share its request_id.
 from __future__ import annotations
 
 import datetime as dt
+import threading
 import time
 import uuid
 from collections.abc import Callable
@@ -30,16 +32,44 @@ STEPS: tuple[str, ...] = ("route", "retrieve", "sql", "answer")
 SQL_ROUTES: tuple[str, ...] = ("sql", "both")
 
 
-@dataclass
 class RequestLog:
-    """Log writer shared by all steps: adds the current request_id to every row."""
+    """Log writer shared by all steps: adds the request and session ids to every row.
 
-    sink: WriteLog
-    request_id: str | None = None
+    The ids are thread-local: one cached agent serves every Streamlit session, each in
+    its own thread, so concurrent questions must not see each other's ids.
+    """
+
+    def __init__(
+        self,
+        sink: WriteLog,
+        request_id: str | None = None,
+        session_id: str | None = None,
+    ) -> None:
+        self.sink = sink
+        self._ids = threading.local()
+        self.request_id, self.session_id = request_id, session_id
+
+    @property
+    def request_id(self) -> str | None:
+        """Id of the question being answered in this thread."""
+        return getattr(self._ids, "request_id", None)
+
+    @request_id.setter
+    def request_id(self, value: str | None) -> None:
+        self._ids.request_id = value
+
+    @property
+    def session_id(self) -> str | None:
+        """Anonymous app session id (random uuid) of this thread's question."""
+        return getattr(self._ids, "session_id", None)
+
+    @session_id.setter
+    def session_id(self, value: str | None) -> None:
+        self._ids.session_id = value
 
     def __call__(self, row: dict[str, Any]) -> None:
-        """Forward one row with the request_id."""
-        self.sink({**row, "request_id": self.request_id})
+        """Forward one row with the request and session ids."""
+        self.sink({**row, "request_id": self.request_id, "session_id": self.session_id})
 
 
 @dataclass
@@ -127,14 +157,16 @@ class Agent:
         question: str,
         today: dt.date | None = None,
         on_step: OnStep | None = None,
+        session_id: str | None = None,
     ) -> AgentResult:
         """Route, resolve the period, gather data, write the answer.
 
         on_step, if given, is called with each step name (STEPS) before that step runs,
-        so a UI can show progress.
+        so a UI can show progress. session_id (anonymous app session) goes to the log.
         """
         start = time.perf_counter()
         self.log.request_id = str(uuid.uuid4())
+        self.log.session_id = session_id
         res = AgentResult(self.log.request_id, question, "", "error")
         costs: list[float | None] = []
         try:
@@ -152,6 +184,7 @@ class Agent:
         """Baseline: search all documents (no router, no period filter, no SQL)."""
         start = time.perf_counter()
         self.log.request_id = str(uuid.uuid4())
+        self.log.session_id = None
         res = AgentResult(self.log.request_id, question, "", "error", route="rag_only")
         costs: list[float | None] = []
         try:

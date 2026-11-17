@@ -125,4 +125,4 @@ def test_log_row_has_all_columns():
     pipe, _, logs = make([reply(GOOD_SQL)])
     res = pipe.answer("q")
     row = log_row(res, "q", "m", "v1")
-    assert set(row) | {"request_id"} == set(LOG_COLUMNS)  # request_id: agent only
+    assert set(row) | {"request_id", "session_id"} == set(LOG_COLUMNS)  # agent only

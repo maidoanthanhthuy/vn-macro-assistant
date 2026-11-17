@@ -28,6 +28,7 @@ def feedback_row(
     request_id: str,
     rating: str,
     comment: str | None,
+    session_id: str | None = None,
     max_chars: int = config.FEEDBACK_MAX_CHARS,
     ratings: tuple[str, ...] = config.FEEDBACK_RATINGS,
 ) -> dict[str, Any]:
@@ -35,8 +36,9 @@ def feedback_row(
     if rating not in ratings:
         raise ValueError(f"rating must be one of {ratings}")
     rid = str(uuid.UUID(request_id))
+    sid = str(uuid.UUID(session_id)) if session_id else None
     text = (comment or "").strip()[:max_chars] or None
-    return {"request_id": rid, "rating": rating, "comment": text}
+    return {"request_id": rid, "session_id": sid, "rating": rating, "comment": text}
 
 
 def data_note(price_date: dt.date | None, report_period: str | None) -> str:

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import sys
+import uuid
 from pathlib import Path
 
 import streamlit as st
@@ -84,7 +85,12 @@ def ask(question: str) -> None:
             status.update(label=label)
             status.write(label)
 
-        res = agent.ask(question, today=local_today(), on_step=on_step)
+        res = agent.ask(
+            question,
+            today=local_today(),
+            on_step=on_step,
+            session_id=st.session_state["session_id"],
+        )
         done = "Đã xong" if res.status == "ok" else "Có lỗi khi xử lý"
         status.update(label=done, state="complete", expanded=False)
     period = res.period
@@ -109,9 +115,8 @@ def send_feedback(item: dict, rating: str) -> None:
 
     rid = item["request_id"]
     comment = st.session_state.get(f"comment_{rid}")
-    ok = write_feedback(
-        os.environ["DATABASE_URL_LOGGER"], feedback_row(rid, rating, comment)
-    )
+    row = feedback_row(rid, rating, comment, st.session_state["session_id"])
+    ok = write_feedback(os.environ["DATABASE_URL_LOGGER"], row)
     st.session_state["feedback"][rid] = rating if ok else "error"
 
 
@@ -149,6 +154,8 @@ def show_answer(item: dict) -> None:
 
 def main() -> None:
     """Page layout."""
+    # Anonymous id of this browser session: random, nothing about the user.
+    st.session_state.setdefault("session_id", str(uuid.uuid4()))
     if not login():
         return
     st.session_state.setdefault("history", [])
