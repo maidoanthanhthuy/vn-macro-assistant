@@ -136,3 +136,12 @@ def test_each_question_gets_a_new_request_id():
     agent, rows, _, _ = make("sql")
     first, second = agent.ask("Q1"), agent.ask("Q2")
     assert first.request_id != second.request_id
+
+
+def test_rag_only_searches_all_documents_without_router_or_sql():
+    agent, rows, calls, answerer = make("sql")  # router decision must be ignored
+    res = agent.ask_rag_only("Q")
+    assert calls["retrieve"] == [("Q", None, None)] and calls["sql"] == []
+    assert [r["component"] for r in rows] == ["retrieve", "answer"]
+    assert answerer.calls[0][1] == "rag" and answerer.calls[0][3] is None
+    assert res.route == "rag_only" and res.status == "ok" and res.chunks == [CHUNK]

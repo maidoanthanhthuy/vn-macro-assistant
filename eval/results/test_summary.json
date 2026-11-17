@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "date": "2026-11-17 12:45",
+    "questions": "eval/test_questions.csv",
+    "model": "gpt-6-luna",
+    "router prompt": "06a978dfa06c",
+    "answer prompt": "5c4f293ef616"
+  },
+  "modes": {
+    "agent": {
+      "n": 40,
+      "verdicts": {
+        "correct": 30,
+        "wrong": 4,
+        "partial": 6
+      },
+      "by_route": {
+        "sql": {
+          "correct": 11,
+          "wrong": 3,
+          "partial": 2
+        },
+        "rag": {
+          "correct": 12,
+          "partial": 4
+        },
+        "both": {
+          "correct": 3,
+          "wrong": 1
+        },
+        "out_of_scope": {
+          "correct": 4
+        }
+      },
+      "mean_latency_ms": 10350,
+      "mean_cost_usd": 0.0006461049999999999,
+      "total_cost_usd": 0.025844199999999998,
+      "errors": 0,
+      "router_correct": 37
+    },
+    "rag_only": {
+      "n": 40,
+      "verdicts": {
+        "wrong": 19,
+        "partial": 7,
+        "correct": 14
+      },
+      "by_route": {
+        "sql": {
+          "wrong": 13,
+          "partial": 1,
+          "correct": 2
+        },
+        "rag": {
+          "correct": 9,
+          "partial": 6,
+          "wrong": 1
+        },
+        "both": {
+          "wrong": 4
+        },
+        "out_of_scope": {
+          "wrong": 1,
+          "correct": 3
+        }
+      },
+      "mean_latency_ms": 4858,
+      "mean_cost_usd": 0.0005036074999999999,
+      "total_cost_usd": 0.020144299999999997,
+      "errors": 0
+    }
+  },
+  "grading_cost_usd": 0.0111707,
+  "grading_errors": 0
+}

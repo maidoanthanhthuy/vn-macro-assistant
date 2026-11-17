@@ -132,6 +132,29 @@ class Agent:
         res.latency_ms = round((time.perf_counter() - start) * 1000)
         return res
 
+    def ask_rag_only(self, question: str) -> AgentResult:
+        """Baseline: search all documents (no router, no period filter, no SQL)."""
+        start = time.perf_counter()
+        self.log.request_id = str(uuid.uuid4())
+        res = AgentResult(self.log.request_id, question, "", "error", route="rag_only")
+        costs: list[float | None] = []
+        try:
+            t0 = time.perf_counter()
+            hits = self.retrieve(question, None, None)
+            ms = round((time.perf_counter() - t0) * 1000)
+            self.log(retrieval_log_row(question, question, hits, ms))
+            res.chunks, res.notes = hits.chunks, list(hits.notes)
+            ans = self.answerer.answer(question, "rag", res.notes, None, res.chunks)
+            costs.append(ans.cost_usd)
+            res.text, res.sources, res.error = ans.text, ans.sources, ans.error
+            res.status = ans.status
+        except Exception as e:  # unexpected failure in a step
+            res.status, res.error = "error", f"{type(e).__name__}: {e}"
+            res.text = config.ANSWER_ERROR_TEXT
+        res.cost_usd = sum(c for c in costs if c is not None)
+        res.latency_ms = round((time.perf_counter() - start) * 1000)
+        return res
+
     def _run(self, question: str, res: AgentResult, costs: list[float | None]) -> None:
         """The steps of `ask`, filling res in place."""
         routed = self.router.route(question)

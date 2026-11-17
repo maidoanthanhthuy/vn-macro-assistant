@@ -366,3 +366,10 @@ SOURCE_TABLE_LABELS: dict[str, str] = {
     "cpi_monthly": "chỉ số giá tiêu dùng (CPI) hằng tháng, nguồn IMF",
     "policy_events": "các lần NHNN đổi lãi suất điều hành (theo thông cáo của NHNN)",
 }
+
+# Official test-set run (src/vnmacro/eval/run_test.py, grade.py)
+TEST_QUESTIONS_FILE = Path("eval/test_questions.csv")
+EVAL_RESULTS_DIR = Path("eval/results")  # committed: official results
+GRADE_PROMPT_FILE = Path("prompts/grade.md")
+HUMAN_CHECK_N = 10  # answers sampled for the human check
+HUMAN_CHECK_SEED = 20261117

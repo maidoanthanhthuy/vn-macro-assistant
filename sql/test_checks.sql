@@ -37,12 +37,17 @@ WHERE symbol IN ('VCB', 'TCB') AND date IN (last_2024, last_2025)
 GROUP BY symbol
 ORDER BY pct_change DESC;
 
--- t04: VN30 highest close in 2021 and its date (intraday high shown for reference).
-SELECT date, close, high
-FROM daily_prices
-WHERE symbol = 'VN30' AND date >= DATE '2021-01-01' AND date < DATE '2022-01-01'
-ORDER BY close DESC
-LIMIT 1;
+-- t04: VN30 in 2021: highest close and highest intraday high, each with its date.
+-- (Corrected after the test run: the first version showed only the max-close day.)
+(SELECT 'highest close' AS measure, date, close AS points
+ FROM daily_prices
+ WHERE symbol = 'VN30' AND date >= DATE '2021-01-01' AND date < DATE '2022-01-01'
+ ORDER BY close DESC LIMIT 1)
+UNION ALL
+(SELECT 'highest intraday high', date, high
+ FROM daily_prices
+ WHERE symbol = 'VN30' AND date >= DATE '2021-01-01' AND date < DATE '2022-01-01'
+ ORDER BY high DESC LIMIT 1);
 
 -- t05: GDP growth 2019, World Bank (default source for past years).
 SELECT year, value AS gdp_growth_pct

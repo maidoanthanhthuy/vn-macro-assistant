@@ -1,0 +1,52 @@
+[
+  {
+    "item": 1,
+    "id": "t10",
+    "mode": "agent"
+  },
+  {
+    "item": 2,
+    "id": "t02",
+    "mode": "rag_only"
+  },
+  {
+    "item": 3,
+    "id": "t15",
+    "mode": "rag_only"
+  },
+  {
+    "item": 4,
+    "id": "t13",
+    "mode": "rag_only"
+  },
+  {
+    "item": 5,
+    "id": "t14",
+    "mode": "rag_only"
+  },
+  {
+    "item": 6,
+    "id": "t22",
+    "mode": "rag_only"
+  },
+  {
+    "item": 7,
+    "id": "t20",
+    "mode": "agent"
+  },
+  {
+    "item": 8,
+    "id": "t38",
+    "mode": "rag_only"
+  },
+  {
+    "item": 9,
+    "id": "t23",
+    "mode": "agent"
+  },
+  {
+    "item": 10,
+    "id": "t30",
+    "mode": "rag_only"
+  }
+]
