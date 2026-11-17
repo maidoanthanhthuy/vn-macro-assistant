@@ -145,23 +145,32 @@ def db_search(
 
 
 @functools.cache
-def get_retriever(strategy: str = config.DEFAULT_CHUNKING) -> Retriever:
-    """Retriever with the pinned model, loaded once per process (cached)."""
+def get_retriever(
+    strategy: str = config.DEFAULT_CHUNKING, backend: str | None = None
+) -> Retriever:
+    """Retriever for one embedding backend (default: EMBEDDING_BACKEND), cached.
+
+    "local" loads the pinned model once; "openai" embeds each question with the API
+    (no torch needed).
+    """
     import os
 
     from dotenv import load_dotenv
 
-    from vnmacro.rag.embed import encode, load_model, model_id
+    from vnmacro.rag.embed import Encoder, backend_from_env, backend_settings, model_id
 
     load_dotenv()
     url = os.environ.get("DATABASE_URL_READER")
     if not url:
         raise SystemExit("DATABASE_URL_READER is not set in .env")
-    settings = config.EMBEDDING_MODEL
-    model = load_model(settings)
+    backend = backend or backend_from_env()
+    settings = backend_settings(backend)
+    encoder = Encoder(backend, settings)
+    if backend == "local":
+        encoder.encode(["warm-up"])  # load the model now, not on the first question
     name = model_id(settings["repo"], settings["revision"])
     return Retriever(
-        embed=lambda text: encode(model, [text], 1)[0],
+        embed=lambda text: encoder.encode([text])[0],
         search=lambda vec, s, e, k: db_search(url, name, strategy, vec, s, e, k),
     )
 

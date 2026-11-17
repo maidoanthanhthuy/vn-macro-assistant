@@ -7,7 +7,8 @@ Run from the repository root (needs requirements-embed.txt):
 
 Runs vnmacro.rag.load_rag, then vnmacro.rag.embed (load_rag empties
 rag.chunk_embeddings, so the order matters), then checks that every chunk of the
-strategy has exactly one vector of the configured model.
+strategy has exactly one vector of the chosen backend (--backend local | openai).
+load_rag deletes every stored vector, so run it once per backend you deploy.
 """
 
 from __future__ import annotations
@@ -24,16 +25,19 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Load chunks, embed, check.")
     parser.add_argument("--strategy", default=config.DEFAULT_CHUNKING)
     parser.add_argument("--snapshot", help="snapshot date folder (default: newest)")
+    parser.add_argument(
+        "--backend", choices=sorted(config.EMBEDDING_BACKENDS), default="local"
+    )
     args = parser.parse_args(argv)
     snapshot = ["--snapshot", args.snapshot] if args.snapshot else []
 
     print("== 1/3 load_rag ==")
     load_rag.main(["--strategy", args.strategy, *snapshot])
     print("\n== 2/3 embed ==")
-    embed.main(["--strategy", args.strategy])
+    embed.main(["--strategy", args.strategy, "--backend", args.backend])
 
     print("\n== 3/3 final check ==")
-    s = config.EMBEDDING_MODEL
+    s = config.EMBEDDING_BACKENDS[args.backend]
     with db_connect() as conn:
         conn.execute(f"SET search_path = {config.RAG_SCHEMA}, public")
         with conn.cursor() as cur:

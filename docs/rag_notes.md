@@ -133,3 +133,30 @@ Retrieval 100-110 ms per question after a 5-7 s model load.
 3. **q11 routing is unstable:** across runs the router sent q11 to `rag` (2023 period,
    fallback note) or `out_of_scope` (the documents start in 2025). Both lead to a
    "not covered" answer, but the answer step must handle either.
+
+## Retrieval check 4 (Phase 7, step 7a): local vs OpenAI embeddings
+
+| Setting | Value |
+|---|---|
+| Date | 2026-11-17 |
+| Models | `AITeamVN/Vietnamese_Embedding_v2` (local, CPU) vs OpenAI `text-embedding-3-large`, `dimensions=1024` (`model_name` `openai/text-embedding-3-large@dim1024`) |
+| Chunk text | the same `embedding_text()` (context + blank line + text), 762 chunks |
+| Embedding cost (OpenAI) | 480,594 input tokens, $0.062 at $0.13 per 1M tokens; 19 s |
+| Pipeline | one router call per question, then the same rag_query and period filter for both models; top 20 |
+
+Run: `python -m vnmacro.eval.run_sql_dev --embeddings local,openai` (two identical runs).
+
+| Question | Period filter | Answer chunk rank, local | Answer chunk rank, OpenAI |
+|---|---|---|---|
+| q09 Latest report on inflation | 2026-10 | 2 | 4 |
+| q10 Why CPI fell in June 2026 | 2026-06 | 1 | 1 |
+| q11 SBV reasons 2023 | 2023 (no documents) | - | - |
+| q12 GDP in H1 2026 | 2026-01..2026-06 | 4 | 3 |
+| q13 Exports in August 2026 | 2026-08 | 2 | 1 |
+| q14 SBV credit policy 2026 | 2026 | 1 | 1 |
+| q16 Latest inflation (RAG part) | 2026-10 | 2 | 3 |
+
+Answer chunk in the top 5: 6 / 6 with both models. Mean retrieval time (embed the
+question + search): local about 240 ms after a 5-10 s model load; OpenAI about 620 ms
+(API call), no model load and no torch in the app. On this small dev set the two models
+are equivalent; the deployed app uses OpenAI to avoid torch (several GB) in the image.

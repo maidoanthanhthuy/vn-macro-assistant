@@ -134,3 +134,23 @@ def test_rag_table():
     assert lines[1] == "q1 | q | rq | 2026-10-01..2026-10-31 | yes | 2 | 3"
     assert lines[2] == "q2 | q | - | none (n) | n/a (no answer doc) | - | -"
     assert lines[3] == "q3 | q | - | 2026-01-01..2026-01-31 | NO | - | -"
+
+
+def test_compare_table_and_top_k_counts():
+    rows = [
+        {"id": "q1", "rag_query": "rq", "start": dt.date(2026, 10, 1),
+         "end": dt.date(2026, 10, 31), "graded": True,
+         "chunk_rank": {"local": 2, "openai": 7}},
+        {"id": "q2", "rag_query": None, "start": None, "end": None, "graded": False,
+         "chunk_rank": {"local": None, "openai": None}},
+        {"id": "q3", "rag_query": "x", "start": None, "end": None, "graded": True,
+         "chunk_rank": {"local": None, "openai": 1}},
+    ]  # fmt: skip
+    lines = ev.compare_table(rows, ["local", "openai"]).splitlines()
+    assert lines[0] == "id | rag_query | period | local | openai"
+    assert lines[1] == "q1 | rq | 2026-10-01..2026-10-31 | 2 | 7"
+    assert lines[2] == "q2 | - | none | - | -"
+    assert ev.top_k_counts(rows, ["local", "openai"], 5) == {
+        "local": (1, 2),
+        "openai": (1, 2),
+    }

@@ -373,3 +373,21 @@ EVAL_RESULTS_DIR = Path("eval/results")  # committed: official results
 GRADE_PROMPT_FILE = Path("prompts/grade.md")
 HUMAN_CHECK_N = 10  # answers sampled for the human check
 HUMAN_CHECK_SEED = 20261117
+
+# Embedding backends (vnmacro.rag.embed, vnmacro.agent.retrieve). EMBEDDING_BACKEND in
+# .env picks the one used to embed questions at runtime; with "openai" the app needs no
+# torch. Each backend stores its vectors under its own model_name (repo@revision).
+EMBEDDING_BACKENDS: dict[str, dict] = {
+    "local": EMBEDDING_MODEL,
+    "openai": {
+        "repo": "openai/text-embedding-3-large",
+        "revision": "dim1024",  # no commit for an API model: the output size instead
+        "api_model": "text-embedding-3-large",
+        "dim": 1024,  # API `dimensions` parameter (same vector(1024) column as local)
+        "batch_size": 64,  # texts per API call
+    },
+}
+DEFAULT_EMBEDDING_BACKEND = "local"
+# USD per 1 million input tokens (OpenAI model page, checked 2026-11-17).
+EMBEDDING_PRICES_USD_PER_MTOK: dict[str, float] = {"text-embedding-3-large": 0.13}
+EVAL_COMPARE_TOP_K = 20  # embedding comparison: ranks shown up to this depth

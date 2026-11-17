@@ -4,8 +4,11 @@ Run from the repository root (after vnmacro.rag.load_rag):
 
     PYTHONPATH=src python -m vnmacro.rag.embed
     PYTHONPATH=src python -m vnmacro.rag.embed --strategy heading_v1
+    PYTHONPATH=src python -m vnmacro.rag.embed --backend openai
 
-Model and settings: config.EMBEDDING_MODEL (repo pinned to a Hugging Face commit).
+Backends: config.EMBEDDING_BACKENDS. "local" = config.EMBEDDING_MODEL (repo pinned to
+a Hugging Face commit, CPU, needs requirements-embed.txt); "openai" = the OpenAI
+embeddings API (OPENAI_API_KEY in .env), output size 1024, token count and cost printed.
 The text sent to the model is chunking.embedding_text(): context + blank line + text.
 Vectors are normalized, so the dot product equals cosine similarity.
 
@@ -61,6 +64,34 @@ def check_vectors(vectors: np.ndarray, dim: int, tol: float) -> list[str]:
     if off.any():
         problems.append(f"{int(off.sum())} vectors with norm off 1 by more than {tol}")
     return problems
+
+
+def normalize_rows(vectors: np.ndarray) -> np.ndarray:
+    """Rows scaled to unit length as float32 (zero rows left as they are)."""
+    v = np.asarray(vectors, dtype=np.float32)
+    norms = np.linalg.norm(v, axis=1, keepdims=True)
+    return v / np.where(norms == 0, 1, norms)
+
+
+def embedding_cost_usd(
+    api_model: str,
+    tokens: int,
+    prices: dict[str, float] = config.EMBEDDING_PRICES_USD_PER_MTOK,
+) -> float | None:
+    """USD cost of embedding `tokens` input tokens; None if the model is unpriced."""
+    price = prices.get(api_model)
+    return None if price is None else tokens * price / 1_000_000
+
+
+def backend_settings(
+    backend: str, backends: dict[str, dict] = config.EMBEDDING_BACKENDS
+) -> dict:
+    """Settings of one embedding backend; SystemExit for an unknown name."""
+    if backend not in backends:
+        raise SystemExit(
+            f"Unknown embedding backend {backend!r}: {', '.join(backends)}"
+        )
+    return backends[backend]
 
 
 def vector_literal(vector: np.ndarray) -> str:
@@ -123,6 +154,60 @@ def encode(model: Any, texts: list[str], batch_size: int) -> np.ndarray:
         convert_to_numpy=True,
         show_progress_bar=len(texts) > batch_size,
     ).astype(np.float32)
+
+
+def openai_encode(
+    client: Any, api_model: str, dim: int, texts: list[str], batch_size: int
+) -> tuple[np.ndarray, int]:
+    """Normalized float32 embeddings from the OpenAI API, and input tokens used."""
+    rows: list[list[float]] = []
+    tokens = 0
+    for i in range(0, len(texts), batch_size):
+        resp = client.embeddings.create(
+            model=api_model, input=texts[i : i + batch_size], dimensions=dim
+        )
+        rows += [d.embedding for d in sorted(resp.data, key=lambda d: d.index)]
+        tokens += getattr(resp.usage, "total_tokens", 0) or 0
+    return normalize_rows(np.array(rows)), tokens
+
+
+class Encoder:
+    """Embed texts with one backend; the model or API client is made on first use."""
+
+    def __init__(self, backend: str, settings: dict) -> None:
+        self.backend, self.settings = backend, settings
+        self.tokens, self.load_seconds = 0, 0.0
+        self._impl: Any = None
+
+    def encode(self, texts: list[str]) -> np.ndarray:
+        """Normalized float32 embeddings, one row per text."""
+        s = self.settings
+        if self._impl is None:
+            t0 = time.perf_counter()
+            if self.backend == "openai":
+                from vnmacro.llm import make_client
+
+                self._impl = make_client()
+            else:
+                self._impl = load_model(s)
+            self.load_seconds = time.perf_counter() - t0
+        if self.backend == "openai":
+            vecs, used = openai_encode(
+                self._impl, s["api_model"], s["dim"], texts, s["batch_size"]
+            )
+            self.tokens += used
+            return vecs
+        return encode(self._impl, texts, s["batch_size"])
+
+
+def backend_from_env() -> str:
+    """EMBEDDING_BACKEND from .env, or the configured default."""
+    import os
+
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    return os.environ.get("EMBEDDING_BACKEND") or config.DEFAULT_EMBEDDING_BACKEND
 
 
 def peak_rss_mb() -> float:
@@ -203,8 +288,11 @@ def main(argv: list[str] | None = None) -> None:
     """Command-line entry point."""
     parser = argparse.ArgumentParser(description="Embed chunks and store vectors.")
     parser.add_argument("--strategy", default=config.DEFAULT_CHUNKING)
+    parser.add_argument(
+        "--backend", choices=sorted(config.EMBEDDING_BACKENDS), default="local"
+    )
     args = parser.parse_args(argv)
-    s = config.EMBEDDING_MODEL
+    s = backend_settings(args.backend)
     name = model_id(s["repo"], s["revision"])
     path = cache_path(config.EMBEDDINGS_DIR, s["repo"], s["revision"])
 
@@ -223,14 +311,12 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Model: {name}")
         print(f"Chunks: {len(chunks)}; cached: {len(chunks) - len(todo)}; "
               f"to encode: {len(todo)}")  # fmt: skip
-        t0 = time.perf_counter()
-        model = load_model(s)
-        t_load = time.perf_counter() - t0
+        encoder = Encoder(args.backend, s)
         t_enc = 0.0
         if todo:
             t1 = time.perf_counter()
-            new = encode(model, [texts[k] for k in todo], s["batch_size"])
-            t_enc = time.perf_counter() - t1
+            new = encoder.encode([texts[k] for k in todo])
+            t_enc = time.perf_counter() - t1 - encoder.load_seconds
             problems = check_vectors(new, s["dim"], config.NORM_TOLERANCE)
             if problems:
                 raise SystemExit("Bad vectors: " + "; ".join(problems))
@@ -259,7 +345,7 @@ def main(argv: list[str] | None = None) -> None:
             expected = answer_chunks(
                 chunks, rc["doc_id"], config.REQUIRED_TEXT[rc["doc_id"]]
             )
-            q = encode(model, [rc["query"]], 1)[0]
+            q = encoder.encode([rc["query"]])[0]
             hits = search(cur, name, args.strategy, q, rc["top_k"])
         print(f"\n== Search: {rc['query']} ==")
         for rank, (chunk_id, context, score) in enumerate(hits, 1):
@@ -271,7 +357,14 @@ def main(argv: list[str] | None = None) -> None:
             problems.append(f"q10 answer {sorted(expected)} not in top {rc['top_k']}")
 
         print("\n== Resources ==")
-        print(f"Model load: {t_load:.1f} s; encoding {len(todo)} chunks: {t_enc:.1f} s")
+        print(
+            f"Model load / client: {encoder.load_seconds:.1f} s; encoding {len(todo)} "
+            f"chunks: {t_enc:.1f} s"
+        )
+        if args.backend == "openai":
+            cost = embedding_cost_usd(s["api_model"], encoder.tokens)
+            shown = "n/a" if cost is None else f"${cost:.6f}"
+            print(f"API input tokens: {encoder.tokens}; cost {shown}")
         print(f"Peak RAM (process): {peak_rss_mb():.0f} MB")
         print("\nChecks: all passed" if not problems else "\nChecks FAILED:")
         for p in problems:

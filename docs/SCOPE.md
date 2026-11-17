@@ -169,7 +169,7 @@ embeddings, so deployment needs a single database container.
 | Market data | KBS API (unofficial; fallback: Vietcap), snapshot in `data/raw/` |
 | IMF data | IMF Data Portal SDMX 3.0 API (e.g. via the imfp package) |
 | Agent | Plain LLM tool calling first; LangGraph only if needed |
-| Embeddings | `AITeamVN/Vietnamese_Embedding_v2` (open, pinned commit, CPU) |
+| Embeddings | `AITeamVN/Vietnamese_Embedding_v2` (open, pinned commit, CPU) for development; OpenAI `text-embedding-3-large` at 1024 dims for the deployed app (no torch); chosen with `EMBEDDING_BACKEND` |
 | LLMs | OpenAI `gpt-6-luna` via the official `openai` SDK (one model; no LLM comparison in the first version) |
 | UI | Streamlit |
 | Packaging | Docker Compose |

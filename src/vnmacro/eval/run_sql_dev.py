@@ -17,6 +17,11 @@ checks at document level that an answer document (config.EVAL_RAG_DOCS) is among
 
     PYTHONPATH=src python -m vnmacro.eval.run_sql_dev --rag
 
+Embedding comparison: one router call per question, then the same query and period
+filter with each backend; shows the answer chunk's rank (top 20) per backend:
+
+    PYTHONPATH=src python -m vnmacro.eval.run_sql_dev --embeddings local,openai
+
 Agent mode asks the full agent every dev question (answers are read by a human; full
 texts are also saved as <time>_agent_dev.md):
 
@@ -256,6 +261,29 @@ def rag_table(rows: list[dict[str, Any]], q_chars: int = 48) -> str:
     return "\n".join(lines)
 
 
+def compare_table(rows: list[dict[str, Any]], backends: list[str]) -> str:
+    """Plain-text table: id, rag_query, period, answer-chunk rank per backend."""
+    lines = ["id | rag_query | period | " + " | ".join(backends)]
+    for r in rows:
+        period = f"{r['start']}..{r['end']}" if r["start"] else "none"
+        ranks = [str(r["chunk_rank"][b] or "-") for b in backends]
+        lines.append(
+            f"{r['id']} | {r['rag_query'] or '-'} | {period} | " + " | ".join(ranks)
+        )
+    return "\n".join(lines)
+
+
+def top_k_counts(
+    rows: list[dict[str, Any]], backends: list[str], k: int
+) -> dict[str, tuple[int, int]]:
+    """Per backend: (questions with the answer chunk in the top k, graded questions)."""
+    graded = [r for r in rows if r["graded"]]
+    return {
+        b: (sum(1 for r in graded if (r["chunk_rank"][b] or k + 1) <= k), len(graded))
+        for b in backends
+    }
+
+
 # ---------- I/O ----------
 
 
@@ -365,6 +393,50 @@ def main_rag() -> None:
     print(f"Saved: {path}")
 
 
+def main_compare_embeddings(backends: list[str]) -> None:
+    """Answer-chunk rank per embedding backend with the same query and period filter."""
+    from vnmacro.agent.resolver import resolve_period
+    from vnmacro.agent.retrieve import first_rank, get_retriever
+    from vnmacro.agent.router import build_router, search_query
+
+    with open(config.SEED_QUESTIONS_FILE, encoding="utf-8", newline="") as f:
+        questions = [
+            r for r in csv.DictReader(f) if r["expected_tool"] in ("rag", "sql+rag")
+        ]
+    router, cov = build_router()
+    retrievers = {b: get_retriever(backend=b) for b in backends}
+    k = config.EVAL_COMPARE_TOP_K
+    rows: list[dict[str, Any]] = []
+    for q in questions:
+        res = router.route(q["question"])
+        d = res.decision
+        period = resolve_period(d, cov) if d else None
+        start, end = (period.start, period.end) if period else (None, None)
+        query = search_query(d, q["question"]) if d else q["question"]
+        answer = config.EVAL_RAG_CHUNKS.get(q["id"], ())
+        ranks, ms = {}, {}
+        for b, retriever in retrievers.items():
+            t0 = time.perf_counter()
+            hits = retriever.retrieve(query, start, end, k)
+            ms[b] = round((time.perf_counter() - t0) * 1000)
+            ranks[b] = first_rank(hits.chunks, answer, "chunk_id")
+        rows.append({
+            "id": q["id"], "question": q["question"],
+            "rag_query": d.rag_query if d else None,
+            "start": start, "end": end, "graded": bool(answer), "chunk_rank": ranks,
+            "retrieve_ms": ms,
+        })  # fmt: skip
+    path = _save(rows, "embedding_compare")
+    print("\n" + compare_table(rows, backends))
+    for b, (hit, n) in top_k_counts(rows, backends, config.RETRIEVE_TOP_K).items():
+        mean_ms = sum(r["retrieve_ms"][b] for r in rows) / len(rows)
+        print(
+            f"{b}: answer chunk in top {config.RETRIEVE_TOP_K} for {hit}/{n}; "
+            f"mean retrieve {mean_ms:.0f} ms"
+        )
+    print(f"Saved: {path}")
+
+
 def answers_markdown(rows: list[dict[str, Any]]) -> str:
     """All agent answers as one Markdown document, one section per question."""
     parts = ["# Agent answers on the dev set"]
@@ -428,7 +500,11 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--router", action="store_true", help="evaluate the router")
     parser.add_argument("--rag", action="store_true", help="evaluate retrieval")
     parser.add_argument("--agent", action="store_true", help="run the full agent")
+    parser.add_argument("--embeddings", help="compare backends, e.g. local,openai")
     args = parser.parse_args(argv)
+    if args.embeddings:
+        main_compare_embeddings(args.embeddings.split(","))
+        return
     if args.agent:
         main_agent()
         return
