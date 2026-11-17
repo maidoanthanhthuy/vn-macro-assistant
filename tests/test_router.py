@@ -58,6 +58,7 @@ def test_parse_decision_ok():
 
 def test_rag_query_only_for_document_routes():
     assert parse_decision(output(route="sql")).rag_query is None
+    assert parse_decision(output(route="explain", rag_query="x")).rag_query is None
     assert parse_decision(output(route="both", rag_query="  ")).rag_query is None
     d = parse_decision(output(route="both", rag_query=None))
     assert search_query(d, "full question") == "full question"

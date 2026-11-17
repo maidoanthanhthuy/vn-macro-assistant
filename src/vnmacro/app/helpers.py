@@ -41,22 +41,11 @@ def feedback_row(
     return {"request_id": rid, "session_id": sid, "rating": rating, "comment": text}
 
 
-def data_note(price_date: dt.date | None, report_period: str | None) -> str:
-    """One-line note: how recent the data is, and that this is not investment advice."""
-    parts = []
-    if price_date:
-        parts.append(f"Giá cổ phiếu đến ngày {price_date:%d/%m/%Y}")
-    if report_period:
-        year, month = report_period.split("-")
-        parts.append(f"báo cáo Cục Thống kê mới nhất: tháng {int(month)}/{year}")
-    known = "; ".join(parts) + ". " if parts else ""
-    return f"{known}Thông tin chỉ để tham khảo, không phải lời khuyên đầu tư."
-
-
 ROUTE_LABELS: dict[str, str] = {
     "sql": "Số liệu (SQL)",
     "rag": "Tài liệu (RAG)",
     "both": "Số liệu + tài liệu",
+    "explain": "Giải thích kiến thức chung",
     "out_of_scope": "Ngoài phạm vi",
 }
 

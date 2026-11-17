@@ -334,6 +334,7 @@ EVAL_ROUTE_MAP: dict[str, str] = {
     "rag": "rag",
     "sql+rag": "both",
     "none": "out_of_scope",
+    "explain": "explain",
 }
 
 # Retrieval for the agent (src/vnmacro/agent/retrieve.py)
@@ -379,6 +380,22 @@ SOURCE_TABLE_LABELS: dict[str, str] = {
     "cpi_monthly": "chỉ số giá tiêu dùng (CPI) hằng tháng, nguồn IMF",
     "policy_events": "các lần NHNN đổi lãi suất điều hành (theo thông cáo của NHNN)",
 }
+
+# Route `explain` (general knowledge): note added by code after the explanation, and the
+# lead-in of the suggested lookup question (user-facing, Vietnamese).
+EXPLAIN_NOTE = "_Đây là giải thích chung, không lấy từ dữ liệu của app._"
+EXPLAIN_SUGGESTION_LEAD = "Câu hỏi gợi ý"
+ANSWER_TITLES: dict[str, str] = {"explain": "Giải thích", "default": "Trả lời ngắn"}
+
+# Data scope (src/vnmacro/agent/scope.py): shown on the main screen and appended to
+# refusals. Labels are user-facing (Vietnamese).
+SCOPE_DOC_TYPE_LABELS: dict[str, str] = {
+    "nso_monthly_report": "báo cáo kinh tế - xã hội hằng tháng của Cục Thống kê",
+    "sbv_quarterly_press": "họp báo quý của Ngân hàng Nhà nước",
+    "sbv_directive": "chỉ thị điều hành năm của Ngân hàng Nhà nước",
+}
+SCOPE_TITLE = "Dữ liệu mình tra cứu được"
+APP_DISCLAIMER = "Thông tin chỉ để tham khảo, không phải lời khuyên đầu tư."
 
 # Official test-set run (src/vnmacro/eval/run_test.py, grade.py)
 TEST_QUESTIONS_FILE = Path("eval/test_questions.csv")

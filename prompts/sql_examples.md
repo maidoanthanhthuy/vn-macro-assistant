@@ -11,19 +11,20 @@ Question: Giá cổ phiếu Thế Giới Di Động hiện tại là bao nhiêu?
 SELECT p.symbol, s.name, p.date, p.close, s.price_unit
 FROM daily_prices p
 JOIN symbols s USING (symbol)
-WHERE ', ' || s.aliases || ',' ILIKE '%, thế giới di động,%'
+WHERE (upper(s.symbol) = upper('thế giới di động')
+       OR ', ' || s.aliases || ',' ILIKE '%, thế giới di động,%')
   AND p.date = (SELECT max(date) FROM daily_prices WHERE symbol = p.symbol)
 LIMIT 10
 ```
 
 ## Example 2: return of a stock over a quarter
 
-Question: Cổ phiếu Masan tăng hay giảm bao nhiêu phần trăm trong quý 2 năm 2024?
+Question: Cổ phiếu msn tăng hay giảm bao nhiêu phần trăm trong quý 2 năm 2024?
 
 ```sql
 WITH target AS (
     SELECT symbol FROM symbols
-    WHERE ', ' || aliases || ',' ILIKE '%, masan,%'
+    WHERE upper(symbol) = upper('msn') OR ', ' || aliases || ',' ILIKE '%, msn,%'
 ), period AS (
     SELECT DATE '2024-04-01' AS p_start, DATE '2024-06-30' AS p_end
 ), start_before AS (

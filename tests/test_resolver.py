@@ -62,6 +62,8 @@ def test_none_and_out_of_scope_give_open_period():
     assert resolve_period(dec("sql", "none", D(2024, 1, 1)), COV).start is None
     res = resolve_period(dec("out_of_scope", "specific", D(2024, 1, 1)), COV)
     assert (res.start, res.end, res.notes) == (None, None, ())
+    res = resolve_period(dec("explain", "specific", D(2024, 1, 1)), COV)
+    assert (res.start, res.end, res.notes) == (None, None, ())
 
 
 def test_specific_inside_coverage_has_no_notes():

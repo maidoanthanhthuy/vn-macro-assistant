@@ -26,9 +26,10 @@ from vnmacro.sql_agent.prompt import build_messages
 LLMCall = Callable[[list[dict[str, str]]], LLMResponse]
 WriteLog = Callable[[dict[str, Any]], None]
 
-ROUTES: tuple[str, ...] = ("sql", "rag", "both", "out_of_scope")
+ROUTES: tuple[str, ...] = ("sql", "rag", "both", "explain", "out_of_scope")
 TIME_REFS: tuple[str, ...] = ("latest", "specific", "range", "none")
 RAG_ROUTES: tuple[str, ...] = ("rag", "both")  # routes that search the documents
+NO_DATA_ROUTES: tuple[str, ...] = ("explain", "out_of_scope")  # no data step
 SCHEMA_NAME = "route_decision"
 RESPONSE_SCHEMA: dict[str, Any] = {
     "type": "object",

@@ -28,3 +28,8 @@ q26,Hôm nay VN-Index đóng cửa bao nhiêu điểm?,numeric,sql,stock_prices,
 q27,Tăng trưởng tiền rộng (M2) của Việt Nam năm 2024 là bao nhiêu?,numeric,sql,macro_indicators,"In scope but missing: World Bank FM.LBL.BMNY.ZG ends 2022; route sql (not out_of_scope) and say 2024 is missing (added 2026-11-17)"
 q28,Tỷ giá USD/VND bình quân năm 2023 là bao nhiêu?,numeric,sql,macro_indicators,"World Bank PA.NUS.FCRF 2023: about 23787.32 VND per USD (added 2026-11-17)"
 q29,Lãi suất tái chiết khấu của Ngân hàng Nhà nước hiện nay là bao nhiêu?,numeric,sql,policy_events,"Current rate = latest rediscount change: 3.0% since 2023-06-19; answer plainly, no hedging (added 2026-11-17)"
+q30,Đầu cơ là gì?,explain,explain,none,"Beginner concept (user test 2026-11-17): short general explanation, no market numbers, note that it is general knowledge, suggest a lookup question (added 2026-11-17)"
+q31,"Mua cổ phiếu ở đâu, có bị mất tiền không?",explain,explain,none,"Beginner how-to + risk (user test): explain opening an account at a securities company and the main risks; no advice (added 2026-11-17)"
+q32,Có ít tiền thì nên đầu tư vào đâu?,out_of_scope,none,none,"Personal investment advice (user test): decline, suggest a lookup question, list the data scope (added 2026-11-17)"
+q33,Cổ phiếu VNG tăng giảm thế nào qua từng năm?,numeric,sql,stock_prices,"Symbol not in the database (user test): route sql (not out_of_scope), say VNG is not covered and list the symbols (added 2026-11-17)"
+q34,giá hpg hiện tại là bao nhiêu?,numeric,sql,stock_prices,"Ticker typed in lower case and not in symbols.aliases: match symbols.symbol case-insensitively; latest close of HPG (2026-11-10) (added 2026-11-17)"

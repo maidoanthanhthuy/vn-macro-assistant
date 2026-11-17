@@ -5,7 +5,6 @@ import pytest
 
 from vnmacro.app.helpers import (
     STEP_LABELS,
-    data_note,
     db_target_env,
     details_markdown,
     feedback_row,
@@ -46,17 +45,6 @@ def test_feedback_row():
     assert feedback_row(rid, "up", None, sid)["session_id"] == sid
     with pytest.raises(ValueError):
         feedback_row(rid, "up", None, "not-a-uuid")
-
-
-def test_data_note():
-    note = data_note(dt.date(2026, 11, 10), "2026-10")
-    assert note == (
-        "Giá cổ phiếu đến ngày 10/11/2026; báo cáo Cục Thống kê mới nhất: tháng "
-        "10/2026. Thông tin chỉ để tham khảo, không phải lời khuyên đầu tư."
-    )
-    assert data_note(None, None) == (
-        "Thông tin chỉ để tham khảo, không phải lời khuyên đầu tư."
-    )
 
 
 def test_details_markdown():

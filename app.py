@@ -27,7 +27,6 @@ from dotenv import load_dotenv  # noqa: E402
 from vnmacro import config  # noqa: E402
 from vnmacro.app.helpers import (  # noqa: E402
     STEP_LABELS,
-    data_note,
     db_target_env,
     details_markdown,
     feedback_row,
@@ -49,11 +48,11 @@ def get_agent():
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def get_data_note() -> str:
-    """Data-date note, refreshed hourly."""
-    from vnmacro.app.service import fetch_data_dates
+def get_scope_brief() -> str:
+    """Short data scope for the main screen (symbols, indicators, dates), hourly."""
+    from vnmacro.agent.scope import fetch_scope, format_scope_brief
 
-    return data_note(*fetch_data_dates(os.environ["DATABASE_URL_READER"]))
+    return format_scope_brief(fetch_scope(os.environ["DATABASE_URL_READER"]))
 
 
 def login() -> bool:
@@ -161,7 +160,7 @@ def main() -> None:
     st.session_state.setdefault("history", [])
     st.session_state.setdefault("feedback", {})
     st.title(config.APP_TITLE)
-    st.caption(get_data_note())
+    st.caption(get_scope_brief() + "  \n" + config.APP_DISCLAIMER)
 
     pending = None
     if not st.session_state["history"]:

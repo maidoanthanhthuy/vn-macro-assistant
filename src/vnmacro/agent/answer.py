@@ -41,8 +41,16 @@ RESPONSE_SCHEMA: dict[str, Any] = {
             },
         },
         "used_documents": {"type": "array", "items": {"type": "integer"}},
+        "suggestion": {"type": ["string", "null"]},
+        "declined": {"type": "boolean"},
     },
-    "required": ["short_answer", "explanations", "used_documents"],
+    "required": [
+        "short_answer",
+        "explanations",
+        "used_documents",
+        "suggestion",
+        "declined",
+    ],
     "additionalProperties": False,
 }
 
@@ -66,6 +74,8 @@ class DraftAnswer:
     short_answer: str
     explanations: list[tuple[str, str]]
     used_documents: list[int]
+    suggestion: str | None = None  # route explain: a lookup question the app can answer
+    declined: bool = False  # out of scope or data missing: the data scope is appended
 
 
 # ---------- pure helpers ----------
@@ -126,7 +136,18 @@ def parse_draft(content: str, n_chunks: int) -> DraftAnswer:
     except (TypeError, KeyError, ValueError) as e:
         raise ValueError(f"Output lists have the wrong shape: {e}") from e
     used = sorted({i for i in used if 1 <= i <= n_chunks})
-    return DraftAnswer(short.strip(), [e for e in explanations if all(e)], used)
+    suggestion, declined = data["suggestion"], data["declined"]
+    if suggestion is not None and not isinstance(suggestion, str):
+        raise ValueError("Output field suggestion must be a string or null.")
+    if not isinstance(declined, bool):
+        raise ValueError("Output field declined must be a boolean.")
+    return DraftAnswer(
+        short.strip(),
+        [e for e in explanations if all(e)],
+        used,
+        (suggestion or "").strip() or None,
+        declined,
+    )
 
 
 def sql_tables(sql: str | None) -> list[str]:
@@ -163,15 +184,39 @@ def build_sources(
     return lines
 
 
-def render(draft: DraftAnswer, sources: list[str]) -> str:
-    """Final Markdown answer: short answer, explanations, sources."""
-    parts = ["**Trả lời ngắn**", draft.short_answer]
+def answer_footer(
+    route: str,
+    draft: DraftAnswer,
+    scope_text: str,
+    explain_note: str = config.EXPLAIN_NOTE,
+    suggestion_lead: str = config.EXPLAIN_SUGGESTION_LEAD,
+    default_suggestion: str = config.APP_SUGGESTED_QUESTIONS[0],
+) -> list[str]:
+    """Lines after the answer: explain note + suggestion, or the scope on a refusal."""
+    if route == "explain":
+        suggestion = draft.suggestion or default_suggestion
+        return [explain_note, f"{suggestion_lead}: “{suggestion}”"]
+    if (route == "out_of_scope" or draft.declined) and scope_text:
+        return [scope_text]
+    return []
+
+
+def render(
+    draft: DraftAnswer,
+    sources: list[str],
+    footer: list[str] | None = None,
+    title: str = config.ANSWER_TITLES["default"],
+) -> str:
+    """Final Markdown answer: answer, explanations, sources, then the footer."""
+    parts = [f"**{title}**", draft.short_answer]
     if draft.explanations:
         parts += ["", "**Giải thích thêm**"]
         parts += [f"- **{term}**: {text}" for term, text in draft.explanations]
     if sources:
         parts += ["", "**Nguồn**"]
         parts += [f"- {s}" for s in sources]
+    for block in footer or []:
+        parts += ["", block]
     return "\n".join(parts)
 
 
@@ -202,7 +247,12 @@ def answer_log_row(
     """Map an answer result to the columns of app.query_log."""
     step: dict[str, Any] = {"attempt": 1, "stage": res.status, "error": res.error}
     if res.draft:
-        step.update(used_documents=res.draft.used_documents, sources=res.sources)
+        step.update(
+            used_documents=res.draft.used_documents,
+            sources=res.sources,
+            declined=res.draft.declined,
+            suggestion=res.draft.suggestion,
+        )
     return {
         "run_id": res.run_id, "component": component, "question": question,
         "model": model, "prompt_version": prompt_version, "status": res.status,
@@ -226,6 +276,7 @@ class Answerer:
     prices: dict[str, dict[str, float]] = field(
         default_factory=lambda: config.LLM_PRICES_USD_PER_MTOK
     )
+    scope_text: str = ""  # data scope appended to refusals (scope.format_scope)
 
     def answer(
         self,
@@ -248,7 +299,10 @@ class Answerer:
                 raise ValueError(f"Model refused: {reply.refusal}")
             res.draft = parse_draft(reply.content, len(chunks))
             res.sources = build_sources(sql, chunks, res.draft.used_documents)
-            res.text, res.status = render(res.draft, res.sources), "ok"
+            footer = answer_footer(route, res.draft, self.scope_text)
+            title = config.ANSWER_TITLES.get(route, config.ANSWER_TITLES["default"])
+            res.text = render(res.draft, res.sources, footer, title)
+            res.status = "ok"
         except Exception as e:  # LLM/network error or invalid output
             res.error = f"{type(e).__name__}: {e}"
             res.text = config.ANSWER_ERROR_TEXT

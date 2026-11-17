@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from vnmacro import config
-from vnmacro.agent.router import RouteDecision
+from vnmacro.agent.router import NO_DATA_ROUTES, RouteDecision
 from vnmacro.sql_agent.context import Coverage
 
 Period = tuple[dt.date, dt.date]
@@ -66,7 +66,7 @@ def data_coverage(
 
 def resolve_period(decision: RouteDecision, cov: DataCoverage) -> ResolvedPeriod:
     """Concrete period for a router decision (see module docstring)."""
-    if decision.route == "out_of_scope" or decision.time_ref == "none":
+    if decision.route in NO_DATA_ROUTES or decision.time_ref == "none":
         return ResolvedPeriod(None, None)
     if decision.time_ref == "latest":
         if decision.route == "sql":

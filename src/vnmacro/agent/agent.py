@@ -264,14 +264,16 @@ def build_agent() -> Agent:
     from vnmacro.agent.answer import RESPONSE_SCHEMA, SCHEMA_NAME
     from vnmacro.agent.retrieve import get_retriever
     from vnmacro.agent.router import build_router
+    from vnmacro.agent.scope import answer_prompt, fetch_scope, format_scope
     from vnmacro.sql_agent import runner
     from vnmacro.sql_agent.pipeline import build_pipeline
     from vnmacro.sql_agent.prompt import prompt_version
 
     load_dotenv()
     logger_url = os.environ.get("DATABASE_URL_LOGGER")
-    if not logger_url:
-        raise SystemExit("DATABASE_URL_LOGGER is not set in .env")
+    reader_url = os.environ.get("DATABASE_URL_READER")
+    if not logger_url or not reader_url:
+        raise SystemExit("DATABASE_URL_LOGGER and DATABASE_URL_READER must be set")
     log = RequestLog(sink=lambda row: runner.write_log(logger_url, row))
     router, coverage = build_router()
     pipe = build_pipeline()
@@ -279,7 +281,10 @@ def build_agent() -> Agent:
     retriever = get_retriever()
     model = llm.model_from_env()
     client = llm.make_client()
-    fixed = config.ANSWER_PROMPT_FILE.read_text(encoding="utf-8").strip() + "\n"
+    scope_text = format_scope(fetch_scope(reader_url))
+    fixed = answer_prompt(
+        config.ANSWER_PROMPT_FILE.read_text(encoding="utf-8"), scope_text
+    )
     answerer = Answerer(
         fixed_prompt=fixed,
         prompt_version=prompt_version(fixed),
@@ -288,6 +293,7 @@ def build_agent() -> Agent:
             client, model, msgs, SCHEMA_NAME, RESPONSE_SCHEMA
         ),
         write_log=log,
+        scope_text=scope_text,
     )
     return Agent(
         router=router,

@@ -89,9 +89,15 @@ first version is built, evaluated and deployed with the MVP documents above.
 1. Numeric (SQL): prices, returns, volumes, macro values, comparisons across periods or tickers.
 2. Interpretation (RAG): what a report or press release says, reasons, assessments, policy direction.
 3. Hybrid (SQL + RAG): a number plus its explanation, or market behavior around a policy event.
-4. Out of scope: the assistant must decline clearly instead of guessing. Requests for
-   investment advice ("should I buy X", which stock to pick) are out of scope: decline
-   politely and suggest data the assistant can look up instead (e.g. past returns).
+4. Explain (added after the user test): a beginner's concept question ("đầu cơ là gì",
+   "mua cổ phiếu ở đâu", "đầu tư cổ phiếu có rủi ro gì") gets a short general explanation
+   with no market numbers and no advice, marked as general knowledge (not from the app's
+   data), plus one lookup question the app can answer.
+5. Out of scope: the assistant must decline clearly instead of guessing. Requests for
+   investment advice ("should I buy X", which stock to pick, where to put one's money)
+   are out of scope: decline politely and suggest data the assistant can look up instead
+   (e.g. past returns). Every refusal, and every answer that says data is missing, ends
+   with the app's data scope (symbols, indicators, periods), built from the database.
 
 ## 3. Out of scope
 

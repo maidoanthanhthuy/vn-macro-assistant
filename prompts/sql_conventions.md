@@ -52,9 +52,12 @@ Rules for writing PostgreSQL queries against the database described above.
   set cannot_answer because the last change is long before today's date.
 
 ## Symbols
-- Find a symbol by name with a whole-name match on symbols.aliases, as described in the
-  column comment: ', ' || aliases || ',' ILIKE '%, <name>,%'. Never a plain substring
-  match.
+- Find a stock or index the user names (ticker or name, any letter case) by matching
+  both the ticker and the aliases:
+  upper(s.symbol) = upper('<text>') OR ', ' || s.aliases || ',' ILIKE '%, <text>,%'.
+  Always keep both tests: users often type tickers in lower case ("hpg", "vnm") and many
+  tickers are not listed in aliases. The aliases test is a whole-name match, as in the
+  column comment; never a plain substring match.
 
 ## Macro data and sources
 - Default source when the user does not name one:

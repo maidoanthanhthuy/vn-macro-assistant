@@ -21,7 +21,15 @@ time period it is about. Do not answer the question.
   figure for "the latest month" (only the newest report knows which month that is) plus a
   market move in that month; market behaviour around an SBV rate decision together with
   the decision itself.
-- `out_of_scope`: everything else. Investment advice, buy/sell/hold recommendations,
+- `explain`: a beginner's question about a concept or basic knowledge of investing, the
+  stock market or the economy, answered from general knowledge without data: what a term
+  means ("đầu cơ là gì", "VN-Index là gì"), how something works ("mua cổ phiếu ở đâu",
+  "cổ tức là gì", "lãi suất tăng thì sao"), general risks ("đầu tư cổ phiếu có rủi ro
+  gì"). If the question also asks for a number, a period or a named stock's data, use the
+  data route instead (the answer explains its terms anyway). Asking for personal advice
+  is never `explain`.
+- `out_of_scope`: everything else. Personal investment advice (what to buy, where to put
+  one's money, "có ít tiền nên đầu tư vào đâu"), buy/sell/hold recommendations,
   "should I buy", portfolio choices or the assistant's own price predictions (IMF
   forecasts stored in the database are in scope); intraday or real-time prices; company
   financial statements (revenue, profit, ratios); gold, crypto, commodity or real estate
@@ -44,6 +52,9 @@ data might be missing.
 Intraday or real-time prices mean prices during a session ("lúc 10 giờ", "đang giao
 dịch"). A daily close for a calendar day ("đóng cửa hôm nay", "giá hôm qua") is `sql`
 with time_ref `specific` for that day, even if that day is not in the data yet.
+The current price of a stock or index ("giá hiện tại", "giá bây giờ", "giá hiện nay",
+"đang ở mức bao nhiêu") means the latest daily close: `sql` with time_ref `latest`, not
+`out_of_scope`. Tickers may be typed in lower case ("hpg", "vnm").
 
 # Time reference
 
@@ -59,7 +70,8 @@ with time_ref `specific` for that day, even if that day is not in the data yet.
 - `none`: no time period in the question.
 - When the period depends on an event inside a named year ("after the first cut in
   2023"), use the named year.
-- Dates are ISO `YYYY-MM-DD`. For `out_of_scope`, use time_ref `none` and null dates.
+- Dates are ISO `YYYY-MM-DD`. For `explain` and `out_of_scope`, use time_ref `none`
+  and null dates.
 - `reason`: one short English sentence explaining the route.
 
 # Document search query
@@ -67,13 +79,18 @@ with time_ref `specific` for that day, even if that day is not in the data yet.
 - `rag_query`: for `rag` and `both`, the part of the question the documents must
   answer. Copy the user's own words; do not rephrase, shorten or generalize them. For
   `rag`, this is the whole question. For `both`, remove only the parts that `sql`
-  answers (prices, stock or index moves). For `sql` and `out_of_scope`, null.
+  answers (prices, stock or index moves). For `sql`, `explain` and `out_of_scope`,
+  null.
 
 # Examples
 
 Today: 2026-11-17
 Question: Giá đóng cửa của VCB ngày 15/3/2024 là bao nhiêu?
 Answer: {"route": "sql", "time_ref": "specific", "period_start": "2024-03-15", "period_end": "2024-03-15", "rag_query": null, "reason": "A price on one day is in the daily prices table."}
+
+Today: 2026-11-17
+Question: giá vnm hiện tại là bao nhiêu?
+Answer: {"route": "sql", "time_ref": "latest", "period_start": null, "period_end": null, "rag_query": null, "reason": "The current price is the latest daily close in the prices table."}
 
 Today: 2026-11-17
 Question: Báo cáo tháng 9/2026 nói gì về sản xuất công nghiệp?
@@ -86,6 +103,14 @@ Answer: {"route": "sql", "time_ref": "specific", "period_start": "2025-01-01", "
 Today: 2026-11-17
 Question: Báo cáo tháng mới nhất nói gì về sản xuất công nghiệp, và cổ phiếu HPG biến động ra sao trong tháng đó?
 Answer: {"route": "both", "time_ref": "latest", "period_start": null, "period_end": null, "rag_query": "Báo cáo tháng mới nhất nói gì về sản xuất công nghiệp?", "reason": "Report content for the latest month plus a stock return in that month."}
+
+Today: 2026-11-17
+Question: Cổ phiếu là gì, mua ở đâu?
+Answer: {"route": "explain", "time_ref": "none", "period_start": null, "period_end": null, "rag_query": null, "reason": "Basic concept question answered from general knowledge."}
+
+Today: 2026-11-17
+Question: Mình có 20 triệu thì nên đầu tư vào đâu?
+Answer: {"route": "out_of_scope", "time_ref": "none", "period_start": null, "period_end": null, "rag_query": null, "reason": "Personal investment advice is not given."}
 
 Today: 2026-11-17
 Question: Giá Bitcoin hôm nay là bao nhiêu?
