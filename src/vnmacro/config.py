@@ -345,3 +345,24 @@ EVAL_RAG_CHUNKS: dict[str, tuple[str, ...]] = {
     "q14": ("sbv_directive_2026_01_002",),
     "q16": ("nso_report_2026_10_029",),
 }
+
+# Answer step and agent (src/vnmacro/agent/answer.py, agent.py)
+ANSWER_PROMPT_FILE = Path("prompts/answer.md")
+LOG_COMPONENT_ANSWER = "answer"
+LOG_COMPONENT_RETRIEVE = "retrieve"
+ANSWER_MAX_CELL_CHARS = 200  # longer SQL cell values are cut in the answer input
+# Shown when a step fails (user-facing, Vietnamese).
+ANSWER_ERROR_TEXT = (
+    "Xin lỗi, hệ thống đang gặp lỗi và chưa trả lời được. Bạn thử lại sau nhé."
+)
+# Source line per data table read by the final SQL (user-facing, Vietnamese). Tables not
+# listed (lookup tables symbols, indicators) are not shown as sources.
+SOURCE_TABLE_LABELS: dict[str, str] = {
+    "daily_prices": "giá đóng cửa và khối lượng hằng ngày (giá điều chỉnh), nguồn KBS",
+    "macro_annual": (
+        "chỉ tiêu vĩ mô hằng năm: World Bank (số thực tế) và IMF WEO (tăng trưởng GDP, "
+        "gồm dự báo)"
+    ),
+    "cpi_monthly": "chỉ số giá tiêu dùng (CPI) hằng tháng, nguồn IMF",
+    "policy_events": "các lần NHNN đổi lãi suất điều hành (theo thông cáo của NHNN)",
+}

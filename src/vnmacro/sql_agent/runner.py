@@ -17,7 +17,7 @@ class QueryError(Exception):
 LOG_COLUMNS: tuple[str, ...] = (
     "run_id", "component", "question", "model", "prompt_version", "status",
     "final_sql", "attempts", "sql_attempts", "error", "row_count", "latency_ms",
-    "input_tokens", "cached_input_tokens", "output_tokens", "cost_usd",
+    "input_tokens", "cached_input_tokens", "output_tokens", "cost_usd", "request_id",
 )  # fmt: skip
 
 
@@ -50,13 +50,17 @@ def run_select(
 
 
 def write_log(url: str, row: dict[str, Any]) -> None:
-    """Insert one app.query_log row as the logger (no RETURNING); warn on failure."""
+    """Insert one app.query_log row as the logger (no RETURNING); warn on failure.
+
+    Columns missing from row (e.g. request_id outside the agent) are inserted as NULL.
+    """
     try:
         import psycopg
         from psycopg import sql
         from psycopg.types.json import Jsonb
 
-        values = {**row, "sql_attempts": Jsonb(row["sql_attempts"])}
+        values = {c: row.get(c) for c in LOG_COLUMNS}
+        values["sql_attempts"] = Jsonb(row.get("sql_attempts") or [])
         query = sql.SQL("INSERT INTO app.query_log ({}) VALUES ({})").format(
             sql.SQL(", ").join(map(sql.Identifier, LOG_COLUMNS)),
             sql.SQL(", ").join(sql.Placeholder(c) for c in LOG_COLUMNS),

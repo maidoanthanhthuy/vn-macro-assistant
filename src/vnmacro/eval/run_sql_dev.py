@@ -17,6 +17,11 @@ checks at document level that an answer document (config.EVAL_RAG_DOCS) is among
 
     PYTHONPATH=src python -m vnmacro.eval.run_sql_dev --rag
 
+Agent mode asks the full agent every dev question (answers are read by a human; full
+texts are also saved as <time>_agent_dev.md):
+
+    PYTHONPATH=src python -m vnmacro.eval.run_sql_dev --agent
+
 Each run is saved to eval/runs/<time>_sql_dev.jsonl or <time>_router_dev.jsonl
 (gitignored). The agent logs to app.query_log as usual.
 """
@@ -360,6 +365,55 @@ def main_rag() -> None:
     print(f"Saved: {path}")
 
 
+def answers_markdown(rows: list[dict[str, Any]]) -> str:
+    """All agent answers as one Markdown document, one section per question."""
+    parts = ["# Agent answers on the dev set"]
+    for r in rows:
+        parts.append(
+            f"## {r['id']}: {r['question']}\n\n"
+            f"route `{r['route']}` (expected `{r['expected']}`), period "
+            f"{r['period'] or '-'}, sql `{r['sql_status'] or '-'}`, "
+            f"cost ${r['cost_usd']:.6f}, {r['latency_ms']} ms\n\n{r['text']}"
+        )
+    return "\n\n".join(parts) + "\n"
+
+
+def main_agent() -> None:
+    """Ask the agent every dev question; save jsonl and a Markdown file of answers."""
+    from vnmacro.agent.agent import build_agent
+
+    with open(config.SEED_QUESTIONS_FILE, encoding="utf-8", newline="") as f:
+        questions = list(csv.DictReader(f))
+    agent = build_agent()
+    rows: list[dict[str, Any]] = []
+    for q in questions:
+        res = agent.ask(q["question"])
+        p = res.period
+        rows.append({
+            "id": q["id"], "question": q["question"],
+            "expected": expected_route(q["expected_tool"]), "route": res.route,
+            "period": f"{p.start}..{p.end}" if p and p.start else None,
+            "rag_query": res.rag_query, "notes": res.notes,
+            "sql_status": res.sql.status if res.sql else None,
+            "sql": res.sql.sql if res.sql else None,
+            "chunks": [c.chunk_id for c in res.chunks], "sources": res.sources,
+            "status": res.status, "error": res.error, "text": res.text,
+            "request_id": res.request_id, "latency_ms": res.latency_ms,
+            "cost_usd": res.cost_usd,
+        })  # fmt: skip
+        print(f"{q['id']}: {res.status} route={res.route} {res.latency_ms} ms")
+    path = _save(rows, "agent_dev")
+    md = path.with_suffix(".md")
+    md.write_text(answers_markdown(rows), encoding="utf-8")
+    total = sum(r["cost_usd"] for r in rows)
+    print(
+        f"\n{len(rows)} questions   errors {sum(r['status'] != 'ok' for r in rows)}   "
+        f"total cost ${total:.6f}   mean ${total / len(rows):.6f} per question   "
+        f"mean time {sum(r['latency_ms'] for r in rows) / len(rows):.0f} ms"
+    )
+    print(f"Saved: {path}\n       {md}")
+
+
 def main(argv: list[str] | None = None) -> None:
     """Run the agent and the reference SQL for every dev SQL question; save jsonl."""
     import argparse
@@ -373,7 +427,11 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Run the dev set.")
     parser.add_argument("--router", action="store_true", help="evaluate the router")
     parser.add_argument("--rag", action="store_true", help="evaluate retrieval")
+    parser.add_argument("--agent", action="store_true", help="run the full agent")
     args = parser.parse_args(argv)
+    if args.agent:
+        main_agent()
+        return
     if args.router:
         main_router()
         return

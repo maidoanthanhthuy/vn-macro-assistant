@@ -237,7 +237,9 @@ Privileges: `sql/roles.sql`.
 |---|---|---|---|
 | `app.query_log` | request to an agent component (all its LLM attempts) | `id` (identity) | `vnmacro_logger` |
 
-Columns: `run_id` (uuid, unique; see below), `created_at`, `component` (`text_to_sql` or `router`), `question`, `model`,
+Columns: `run_id` (uuid, unique; see below), `request_id` (uuid shared by all step rows of
+one agent question; NULL when a component runs alone), `created_at`, `component`
+(`router`, `retrieve`, `text_to_sql` or `answer`), `question`, `model`,
 `prompt_version` (short hash of schema context + conventions + examples), `status`
 (`ok`, `cannot_answer`, `blocked`, `error`), `final_sql`, `attempts` (LLM calls),
 `sql_attempts` (JSON array: each SQL tried and its error), `error`, `row_count`,
