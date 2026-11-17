@@ -25,6 +25,8 @@ from vnmacro.agent.router import RAG_ROUTES, Router, search_query
 RetrieveFn = Callable[[str, dt.date | None, dt.date | None], RetrievalResult]
 TextToSQLFn = Callable[[str], Any]  # returns a sql_agent.pipeline.SQLResult
 WriteLog = Callable[[dict[str, Any]], None]
+OnStep = Callable[[str], None]  # called with "route", "retrieve", "sql", "answer"
+STEPS: tuple[str, ...] = ("route", "retrieve", "sql", "answer")
 SQL_ROUTES: tuple[str, ...] = ("sql", "both")
 
 
@@ -120,14 +122,25 @@ class Agent:
     answerer: Answerer
     log: RequestLog
 
-    def ask(self, question: str, today: dt.date | None = None) -> AgentResult:
-        """Route, resolve the period, gather data, write the answer."""
+    def ask(
+        self,
+        question: str,
+        today: dt.date | None = None,
+        on_step: OnStep | None = None,
+    ) -> AgentResult:
+        """Route, resolve the period, gather data, write the answer.
+
+        on_step, if given, is called with each step name (STEPS) before that step runs,
+        so a UI can show progress.
+        """
         start = time.perf_counter()
         self.log.request_id = str(uuid.uuid4())
         res = AgentResult(self.log.request_id, question, "", "error")
         costs: list[float | None] = []
         try:
-            self._run(question, res, costs, today or dt.date.today())
+            self._run(
+                question, res, costs, today or dt.date.today(), on_step or _no_step
+            )
         except Exception as e:  # unexpected failure in a step
             res.status, res.error = "error", f"{type(e).__name__}: {e}"
             res.text = config.ANSWER_ERROR_TEXT
@@ -165,8 +178,10 @@ class Agent:
         res: AgentResult,
         costs: list[float | None],
         today: dt.date,
+        on_step: OnStep,
     ) -> None:
         """The steps of `ask`, filling res in place."""
+        on_step("route")
         routed = self.router.route(question, today)
         costs.append(routed.cost_usd)
         d = routed.decision
@@ -178,6 +193,7 @@ class Agent:
         res.notes = period_notes(res.period)
 
         if d.route in RAG_ROUTES:
+            on_step("retrieve")
             query = search_query(d, question)
             t0 = time.perf_counter()
             hits = self.retrieve(query, res.period.start, res.period.end)
@@ -186,14 +202,20 @@ class Agent:
             costs.append(hits.cost_usd)
             res.chunks, res.notes = hits.chunks, res.notes + list(hits.notes)
         if d.route in SQL_ROUTES:
+            on_step("sql")
             s = self.text_to_sql(sql_question(question, d.route, res.period, today))
             costs.append(s.cost_usd)
             res.sql = SQLData(s.status, s.sql, s.columns, s.rows, s.notes, s.reason)
 
+        on_step("answer")
         ans = self.answerer.answer(question, d.route, res.notes, res.sql, res.chunks)
         costs.append(ans.cost_usd)
         res.text, res.sources, res.error = ans.text, ans.sources, ans.error
         res.status = ans.status
+
+
+def _no_step(step: str) -> None:
+    """Default on_step: do nothing."""
 
 
 # ---------- I/O ----------

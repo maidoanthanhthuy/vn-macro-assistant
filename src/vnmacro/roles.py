@@ -42,7 +42,14 @@ PROBE_INSERT = (
     "INSERT INTO app.query_log (run_id, component, question, status) "
     f"VALUES ('{RUN_ID_SLOT}', '{PROBE_COMPONENT}', 'probe', 'cannot_answer')"
 )
-PROBE_CLEANUP = f"DELETE FROM app.query_log WHERE component = '{PROBE_COMPONENT}'"
+PROBE_FEEDBACK = (
+    "INSERT INTO app.feedback (request_id, rating, comment) "
+    f"VALUES ('{RUN_ID_SLOT}', 'up', '{PROBE_COMPONENT}')"
+)
+PROBE_CLEANUP = (
+    f"DELETE FROM app.query_log WHERE component = '{PROBE_COMPONENT}'",
+    f"DELETE FROM app.feedback WHERE comment = '{PROBE_COMPONENT}'",
+)
 # role, label, SQL, expected outcome, run in a READ WRITE transaction. The READ WRITE
 # rows turn the reader's read-only setting off, so they test the privileges alone.
 R, L = config.READER_ROLE, config.LOGGER_ROLE
@@ -74,6 +81,11 @@ CHECKS: tuple[tuple[str, str, str, str, bool], ...] = (
     (L, "l. CREATE TABLE in app", "CREATE TABLE app.logger_probe (id int)", "blocked",
      False),
     (L, "m. CREATE TEMP TABLE", "CREATE TEMP TABLE logger_probe (id int)", "blocked",
+     False),
+    (L, "n. INSERT INTO app.feedback (rolled back)", PROBE_FEEDBACK, "ok", False),
+    (L, "o. SELECT FROM app.feedback", "SELECT count(*) FROM app.feedback", "blocked",
+     False),
+    (R, "p. SELECT FROM app.feedback", "SELECT count(*) FROM app.feedback", "blocked",
      False),
 )  # fmt: skip
 
@@ -199,10 +211,10 @@ def main(argv: list[str] | None = None) -> None:
                     f"{outcome_text(state, name)}"
                 )
     with owner_connect(target) as conn, conn.cursor() as cur:
-        leftover = cur.execute(PROBE_CLEANUP).rowcount
+        leftover = sum(cur.execute(q).rowcount for q in PROBE_CLEANUP)
     ok = leftover == 0
     failed += not ok
-    print(f"{'PASS' if ok else 'FAIL'}  owner g2. test rows left in app.query_log: "
+    print(f"{'PASS' if ok else 'FAIL'}  owner g2. test rows left in app tables: "
           f"{leftover} (deleted)")  # fmt: skip
     if failed:
         raise SystemExit(f"{failed} check(s) failed")

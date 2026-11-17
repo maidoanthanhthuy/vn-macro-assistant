@@ -172,9 +172,8 @@ def db_search(
     end: dt.date | None,
     k: int,
 ) -> list[tuple[Any, ...]]:
-    """Exact dot-product search in a read-only transaction as the reader."""
-    import psycopg
-
+    """Exact dot-product search as the reader, on the reused connection."""
+    from vnmacro.db import with_connection
     from vnmacro.rag.embed import vector_literal
 
     params = {
@@ -185,9 +184,10 @@ def db_search(
         "end": end,
         "k": k,
     }
-    with psycopg.connect(url) as conn:
-        conn.read_only = True
-        return [tuple(r) for r in conn.execute(_SEARCH_SQL, params).fetchall()]
+    return with_connection(
+        url,
+        lambda conn: [tuple(r) for r in conn.execute(_SEARCH_SQL, params).fetchall()],
+    )
 
 
 @functools.cache

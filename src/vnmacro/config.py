@@ -404,3 +404,16 @@ DEFAULT_EMBEDDING_BACKEND = "local"
 # USD per 1 million input tokens (OpenAI model page, checked 2026-11-17).
 EMBEDDING_PRICES_USD_PER_MTOK: dict[str, float] = {"text-embedding-3-large": 0.13}
 EVAL_COMPARE_TOP_K = 20  # embedding comparison: ranks shown up to this depth
+
+# Streamlit app (app.py, src/vnmacro/app/). Settings come from environment variables
+# (.env locally, root-level secrets on Streamlit Cloud): APP_PASSWORD, OPENAI_*,
+# DATABASE_URL_READER, DATABASE_URL_LOGGER, EMBEDDING_BACKEND.
+APP_TITLE = "Trợ lý số liệu thị trường & kinh tế Việt Nam"
+APP_SUGGESTED_QUESTIONS: tuple[str, ...] = (
+    "VN-Index năm 2025 tăng hay giảm bao nhiêu phần trăm?",
+    "Lạm phát tháng gần nhất là bao nhiêu?",
+    "Báo cáo tháng 10/2026 nói gì về xuất khẩu?",
+    "Lãi suất tái cấp vốn của Ngân hàng Nhà nước hiện nay là bao nhiêu?",
+)
+FEEDBACK_RATINGS: tuple[str, ...] = ("up", "down")
+FEEDBACK_MAX_CHARS = 1000  # same limit as the CHECK on app.feedback.comment

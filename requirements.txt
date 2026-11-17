@@ -14,3 +14,4 @@ lxml==6.1.3  # parser for python-docx and beautifulsoup4
 numpy==2.4.6  # vectors and cache (rag/embed.py; imported by its tests)
 openai==3.50.0  # LLM calls (Phase 3+)
 sqlglot==30.27.0  # SQL safety check for Text-to-SQL (sql_agent/guard.py)
+streamlit==1.66.1  # web app (app.py)

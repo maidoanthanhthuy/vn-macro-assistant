@@ -156,3 +156,14 @@ def test_rag_only_searches_all_documents_without_router_or_sql():
     assert [r["component"] for r in rows] == ["retrieve", "answer"]
     assert answerer.calls[0][1] == "rag" and answerer.calls[0][3] is None
     assert res.route == "rag_only" and res.status == "ok" and res.chunks == [CHUNK]
+
+
+def test_on_step_reports_each_step_in_order():
+    steps = []
+    agent, _, _, _ = make("both", rag_query="CPI?")
+    agent.ask("Q", on_step=steps.append)
+    assert steps == ["route", "retrieve", "sql", "answer"]
+    steps.clear()
+    agent, _, _, _ = make("out_of_scope", "none")
+    agent.ask("Q", on_step=steps.append)
+    assert steps == ["route", "answer"]

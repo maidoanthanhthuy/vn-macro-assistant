@@ -242,6 +242,7 @@ Privileges: `sql/roles.sql`.
 | Table | Grain (one row per) | Primary key | Written by |
 |---|---|---|---|
 | `app.query_log` | request to an agent component (all its LLM attempts) | `id` (identity) | `vnmacro_logger` |
+| `app.feedback` | thumbs up/down given in the app | `id` (identity) | `vnmacro_logger` |
 
 Columns: `run_id` (uuid, unique; see below), `request_id` (uuid shared by all step rows of
 one agent question; NULL when a component runs alone), `created_at`, `component`
@@ -253,6 +254,11 @@ one agent question; NULL when a component runs alone), `created_at`, `component`
 CHECKs: a `text_to_sql` row with `ok` needs `final_sql` (router rows have no SQL; their
 decision is the single object in `sql_attempts`), `error` needs `error`, cached tokens <= input tokens,
 counts >= 0, `sql_attempts` is an array.
+
+`app.feedback` columns: `request_id` (uuid of the answered question, joins `app.query_log`;
+no foreign key because `request_id` is not unique there), `rating` (`up` / `down`),
+`comment` (optional, at most 1000 characters), `created_at`. `vnmacro_logger` may only
+insert into it, like the log.
 
 The agent writes the log as `vnmacro_logger`:
 

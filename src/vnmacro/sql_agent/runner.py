@@ -27,26 +27,38 @@ def run_select(
     timeout: str = config.SQL_STATEMENT_TIMEOUT,
     max_rows: int = config.SQL_MAX_ROWS,
 ) -> tuple[list[str], list[tuple[Any, ...]]]:
-    """Run one query as the reader in a READ ONLY transaction, always rolled back."""
+    """Run one query as the reader in a READ ONLY transaction, always rolled back.
+
+    Uses the reused connection of vnmacro.db (reconnects once if it was lost).
+    """
     import psycopg
     from psycopg import sql as pgsql
+
+    from vnmacro.db import with_connection
 
     set_timeout = pgsql.SQL("SET LOCAL statement_timeout = {}").format(
         pgsql.Literal(timeout)
     )
-    with psycopg.connect(url, autocommit=True) as conn, conn.cursor() as cur:
-        cur.execute("BEGIN READ ONLY")
-        try:
-            cur.execute(set_timeout)
+
+    def run(conn: Any) -> tuple[list[str], list[tuple[Any, ...]]]:
+        with conn.cursor() as cur:
+            cur.execute("BEGIN READ ONLY")
             try:
-                cur.execute(sql)
-            except psycopg.Error as e:
-                state = f" [{e.sqlstate}]" if e.sqlstate else ""
-                raise QueryError(f"{type(e).__name__}{state}: {e}".strip()) from e
-            names = [d.name for d in cur.description or []]
-            return names, cur.fetchmany(max_rows)
-        finally:
-            cur.execute("ROLLBACK")
+                cur.execute(set_timeout)
+                try:
+                    cur.execute(sql)
+                except psycopg.Error as e:
+                    if conn.broken:  # connection lost: let with_connection retry
+                        raise
+                    state = f" [{e.sqlstate}]" if e.sqlstate else ""
+                    raise QueryError(f"{type(e).__name__}{state}: {e}".strip()) from e
+                names = [d.name for d in cur.description or []]
+                return names, cur.fetchmany(max_rows)
+            finally:
+                if not (conn.broken or conn.closed):
+                    cur.execute("ROLLBACK")
+
+    return with_connection(url, run)
 
 
 def write_log(url: str, row: dict[str, Any]) -> None:
@@ -55,9 +67,10 @@ def write_log(url: str, row: dict[str, Any]) -> None:
     Columns missing from row (e.g. request_id outside the agent) are inserted as NULL.
     """
     try:
-        import psycopg
         from psycopg import sql
         from psycopg.types.json import Jsonb
+
+        from vnmacro.db import with_connection
 
         values = {c: row.get(c) for c in LOG_COLUMNS}
         values["sql_attempts"] = Jsonb(row.get("sql_attempts") or [])
@@ -65,7 +78,6 @@ def write_log(url: str, row: dict[str, Any]) -> None:
             sql.SQL(", ").join(map(sql.Identifier, LOG_COLUMNS)),
             sql.SQL(", ").join(sql.Placeholder(c) for c in LOG_COLUMNS),
         )
-        with psycopg.connect(url) as conn:
-            conn.execute(query, values)
+        with_connection(url, lambda conn: conn.execute(query, values))
     except Exception as e:  # logging must never break the answer
         log.warning("query_log insert failed: %s", e)

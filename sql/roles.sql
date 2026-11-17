@@ -6,9 +6,9 @@
 -- documents; the SQL check in guard.py still limits generated SQL to public). It has
 -- no access to schema app, cannot write, cannot create objects or temporary tables.
 --
--- vnmacro_logger may only INSERT into app.query_log. It cannot read the log (other
--- users' questions), has no access to schemas public and rag, and cannot create
--- objects or temporary tables. Run sql/app_schema.sql before this file; the app
+-- vnmacro_logger may only INSERT into app.query_log and app.feedback. It cannot read
+-- them (other users' questions and comments), has no access to schemas public and rag,
+-- and cannot create objects or temporary tables. Run sql/app_schema.sql before this file; the app
 -- grants are skipped while schema app does not exist.
 
 -- Role (LOGIN, no other attributes)
@@ -127,6 +127,9 @@ BEGIN
         GRANT INSERT ON app.query_log TO vnmacro_logger;
         EXECUTE format('GRANT USAGE ON SEQUENCE %s TO vnmacro_logger',
                        pg_get_serial_sequence('app.query_log', 'id'));
+        GRANT INSERT ON app.feedback TO vnmacro_logger;
+        EXECUTE format('GRANT USAGE ON SEQUENCE %s TO vnmacro_logger',
+                       pg_get_serial_sequence('app.feedback', 'id'));
     ELSE
         RAISE NOTICE 'schema app does not exist: run sql/app_schema.sql, then apply again';
     END IF;

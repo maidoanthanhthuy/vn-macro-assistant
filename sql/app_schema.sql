@@ -63,6 +63,30 @@ $$;
 ALTER TABLE app.query_log ADD COLUMN IF NOT EXISTS request_id UUID;
 
 CREATE INDEX IF NOT EXISTS query_log_created_at_idx ON app.query_log (created_at);
+
+-- ---------------------------------------------------------------------------
+-- app.feedback: thumbs up/down per answer (Phase 7), insert-only for the app
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS app.feedback (
+    id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    request_id  UUID NOT NULL,
+    rating      TEXT NOT NULL CHECK (rating IN ('up', 'down')),
+    comment     TEXT CHECK (comment IS NULL OR char_length(comment) BETWEEN 1 AND 1000),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS feedback_request_id_idx ON app.feedback (request_id);
+
+COMMENT ON TABLE app.feedback IS
+    'One row per thumbs up/down given in the app. Written by vnmacro_logger (INSERT only); read by the owner. Joined to app.query_log on request_id (no foreign key: request_id is not unique there).';
+COMMENT ON COLUMN app.feedback.request_id IS
+    'request_id of the answered question (app.query_log.request_id).';
+COMMENT ON COLUMN app.feedback.rating IS
+    '''up'' or ''down'' (thumbs).';
+COMMENT ON COLUMN app.feedback.comment IS
+    'Optional short comment typed by the user (max 1000 characters); may hold personal data, only the owner can read it.';
+COMMENT ON COLUMN app.feedback.created_at IS
+    'Time the feedback was written.';
 CREATE INDEX IF NOT EXISTS query_log_request_id_idx ON app.query_log (request_id);
 
 COMMENT ON TABLE app.query_log IS
