@@ -1,6 +1,12 @@
 import datetime as dt
 
-from vnmacro.agent.retrieve import RetrievedChunk, Retriever, first_rank, period_args
+from vnmacro.agent.retrieve import (
+    RetrievedChunk,
+    Retriever,
+    first_rank,
+    period_args,
+    vector_coverage_error,
+)
 
 D = dt.date
 
@@ -9,7 +15,7 @@ def row(doc_id, score=0.5):
     return ("text", "label", "title", "2026-10", "url", score, doc_id, doc_id + "_1")
 
 
-def make(results):
+def make(results, **kw):
     """Retriever whose search returns results[(start, end)] and records its calls."""
     calls = []
 
@@ -17,7 +23,8 @@ def make(results):
         calls.append((vec, start, end, k))
         return results.get((start, end), [])
 
-    return Retriever(embed=lambda q: f"vec:{q}", search=search, k=5), calls
+    embed = lambda q: (f"vec:{q}", 20)  # noqa: E731
+    return Retriever(embed=embed, search=search, k=5, **kw), calls
 
 
 def test_period_args():
@@ -62,3 +69,25 @@ def test_first_rank():
     assert first_rank(chunks, ("z",)) is None
     assert first_rank(chunks, ()) is None
     assert first_rank(chunks, ("b_1",), "chunk_id") == 2
+
+
+def test_query_embedding_cost_only_with_a_price():
+    r, _ = make({(None, None): [row("a")]}, model="emb", price_per_mtok=0.13)
+    res = r.retrieve("q")
+    assert (res.model, res.tokens) == ("emb", 20)
+    assert abs(res.cost_usd - 20 * 0.13 / 1e6) < 1e-15
+    period = (D(2026, 1, 1), D(2026, 1, 31))
+    r, _ = make({}, model="emb", price_per_mtok=0.13)
+    assert r.retrieve("q", *period).cost_usd is not None  # also on the fallback path
+    local, _ = make({(None, None): [row("a")]})
+    assert local.retrieve("q").cost_usd is None
+
+
+def test_vector_coverage_error():
+    assert vector_coverage_error(762, 762, "openai", "m", "heading_v1") is None
+    msg = vector_coverage_error(762, 0, "openai", "m", "heading_v1")
+    assert "0 vectors for 762 chunks" in msg
+    assert "python -m vnmacro.rag.embed --backend openai --strategy heading_v1" in msg
+    assert "run vnmacro.rag.build first" in vector_coverage_error(
+        0, 0, "local", "m", "s"
+    )

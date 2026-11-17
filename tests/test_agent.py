@@ -54,7 +54,7 @@ def make(route, time_ref="latest", rag_query=None):
 
     def retrieve(q, s, e):
         calls["retrieve"].append((q, s, e))
-        return RetrievalResult([CHUNK], True, ("rnote",))
+        return RetrievalResult([CHUNK], True, ("rnote",), "emb", 20, 0.0001)
 
     def text_to_sql(q):
         calls["sql"].append(q)
@@ -99,6 +99,10 @@ def test_retrieval_log_row():
     assert row["component"] == config.LOG_COMPONENT_RETRIEVE
     assert row["status"] == "ok" and row["row_count"] == 1 and row["final_sql"] is None
     assert row["sql_attempts"][0]["chunks"] == [["d_001", 0.5]]
+    assert (row["model"], row["input_tokens"], row["cost_usd"]) == (None, 0, None)
+    paid = RetrievalResult([CHUNK], True, (), "emb", 20, 0.0001)
+    row = retrieval_log_row("Q", "rq", paid, 12)
+    assert (row["model"], row["input_tokens"], row["cost_usd"]) == ("emb", 20, 0.0001)
 
 
 def test_both_searches_documents_first_and_passes_period_to_sql():
@@ -114,7 +118,7 @@ def test_both_searches_documents_first_and_passes_period_to_sql():
     assert route == "both" and chunks == [CHUNK] and sql.rows == [(1,)]
     assert notes == ["Period used: 2026-10-01 to 2026-10-31.", "rnote"]
     assert res.status == "ok" and res.text == "ANSWER"
-    assert abs(res.cost_usd - 0.006) < 1e-12
+    assert abs(res.cost_usd - 0.0061) < 1e-12  # router + embedding + sql + answer
 
 
 def test_sql_route_skips_retrieval():

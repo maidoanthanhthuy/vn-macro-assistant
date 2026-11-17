@@ -93,7 +93,7 @@ def retrieval_log_row(
     latency_ms: int,
     component: str = config.LOG_COMPONENT_RETRIEVE,
 ) -> dict[str, Any]:
-    """app.query_log row for one document search (no LLM call)."""
+    """app.query_log row for one document search (API embedding cost, if any)."""
     step = {
         "attempt": 1, "stage": "ok", "error": None, "query": query,
         "filtered": res.filtered, "notes": list(res.notes),
@@ -101,10 +101,11 @@ def retrieval_log_row(
     }  # fmt: skip
     return {
         "run_id": str(uuid.uuid4()), "component": component, "question": question,
-        "model": None, "prompt_version": None, "status": "ok", "final_sql": None,
-        "attempts": 0, "sql_attempts": [step], "error": None,
-        "row_count": len(res.chunks), "latency_ms": latency_ms, "input_tokens": 0,
-        "cached_input_tokens": 0, "output_tokens": 0, "cost_usd": None,
+        "model": res.model, "prompt_version": None, "status": "ok",
+        "final_sql": None, "attempts": 0, "sql_attempts": [step], "error": None,
+        "row_count": len(res.chunks), "latency_ms": latency_ms,
+        "input_tokens": res.tokens, "cached_input_tokens": 0, "output_tokens": 0,
+        "cost_usd": res.cost_usd,
     }  # fmt: skip
 
 
@@ -145,6 +146,7 @@ class Agent:
             hits = self.retrieve(question, None, None)
             ms = round((time.perf_counter() - t0) * 1000)
             self.log(retrieval_log_row(question, question, hits, ms))
+            costs.append(hits.cost_usd)
             res.chunks, res.notes = hits.chunks, list(hits.notes)
             ans = self.answerer.answer(question, "rag", res.notes, None, res.chunks)
             costs.append(ans.cost_usd)
@@ -181,6 +183,7 @@ class Agent:
             hits = self.retrieve(query, res.period.start, res.period.end)
             ms = round((time.perf_counter() - t0) * 1000)
             self.log(retrieval_log_row(question, query, hits, ms))
+            costs.append(hits.cost_usd)
             res.chunks, res.notes = hits.chunks, res.notes + list(hits.notes)
         if d.route in SQL_ROUTES:
             s = self.text_to_sql(sql_question(question, d.route, res.period, today))

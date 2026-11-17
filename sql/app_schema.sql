@@ -98,10 +98,10 @@ COMMENT ON COLUMN app.query_log.row_count IS
 COMMENT ON COLUMN app.query_log.latency_ms IS
     'Wall time of the whole request in milliseconds (LLM calls + checks + query).';
 COMMENT ON COLUMN app.query_log.input_tokens IS
-    'Total input tokens over all LLM calls, including cached ones.';
+    'Total input tokens over all LLM calls, including cached ones; for retrieve rows, the embedding API tokens of the question (0 for the local model).';
 COMMENT ON COLUMN app.query_log.cached_input_tokens IS
     'Part of input_tokens served from the provider prompt cache.';
 COMMENT ON COLUMN app.query_log.output_tokens IS
     'Total output tokens over all LLM calls (including reasoning tokens, if any).';
 COMMENT ON COLUMN app.query_log.cost_usd IS
-    'Estimated cost in USD of all LLM calls, from token counts and the configured prices.';
+    'Estimated cost in USD of all LLM calls (and, for retrieve rows, of the embedding API call for the question), from token counts and the configured prices. Stored with 6 decimals, so a single query embedding (about 0.000004) is rounded.';

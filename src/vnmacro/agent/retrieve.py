@@ -20,7 +20,7 @@ from typing import Any
 
 from vnmacro import config
 
-EmbedFn = Callable[[str], Any]
+EmbedFn = Callable[[str], tuple[Any, int]]  # text -> (vector, API input tokens)
 # (query vector, period start, period end, k) -> rows in RetrievedChunk field order
 SearchFn = Callable[[Any, dt.date | None, dt.date | None, int], list[tuple[Any, ...]]]
 
@@ -46,6 +46,24 @@ class RetrievalResult:
     chunks: list[RetrievedChunk]
     filtered: bool
     notes: tuple[str, ...] = ()
+    model: str | None = None  # embedding model of the question (API backend only)
+    tokens: int = 0  # API input tokens used to embed the question
+    cost_usd: float | None = None  # None for the local model
+
+
+def vector_coverage_error(
+    n_chunks: int, n_vectors: int, backend: str, model_name: str, strategy: str
+) -> str | None:
+    """Startup error when not every chunk has a vector of the model in use."""
+    if n_chunks and n_vectors == n_chunks:
+        return None
+    return (
+        f"Embedding backend {backend!r} ({model_name}) has {n_vectors} vectors for "
+        f"{n_chunks} chunks of strategy {strategy!r}. Embed the chunks again: "
+        f"PYTHONPATH=src python -m vnmacro.rag.embed --backend {backend} "
+        f"--strategy {strategy}"
+        + ("" if n_chunks else " (no chunks: run vnmacro.rag.build first)")
+    )
 
 
 def period_args(
@@ -75,6 +93,8 @@ class Retriever:
     embed: EmbedFn
     search: SearchFn
     k: int = config.RETRIEVE_TOP_K
+    model: str | None = None  # API model name, for the log
+    price_per_mtok: float | None = None  # USD per 1M input tokens; None = free/local
 
     def retrieve(
         self,
@@ -85,20 +105,27 @@ class Retriever:
     ) -> RetrievalResult:
         """Top-k chunks for a question, filtered by period when one is given."""
         k = k or self.k
-        vec = self.embed(question)
+        vec, tokens = self.embed(question)
+        cost = None
+        if self.price_per_mtok is not None:
+            cost = tokens * self.price_per_mtok / 1_000_000
+        usage = {"model": self.model, "tokens": tokens, "cost_usd": cost}
         period = period_args(period_start, period_end)
+        notes: tuple[str, ...] = ()
         if period:
             rows = self.search(vec, *period, k)
             if rows:
-                return RetrievalResult([RetrievedChunk(*r) for r in rows], True)
-            note = (
+                return RetrievalResult(
+                    [RetrievedChunk(*r) for r in rows], True, **usage
+                )
+            notes = (
                 f"No document covers {period[0]}..{period[1]}; "
-                "searched all documents instead."
+                "searched all documents instead.",
             )
-            rows = self.search(vec, None, None, k)
-            return RetrievalResult([RetrievedChunk(*r) for r in rows], False, (note,))
         rows = self.search(vec, None, None, k)
-        return RetrievalResult([RetrievedChunk(*r) for r in rows], False)
+        return RetrievalResult(
+            [RetrievedChunk(*r) for r in rows], False, notes, **usage
+        )
 
 
 # ---------- I/O ----------
@@ -115,6 +142,25 @@ WHERE e.model_name = %(model)s AND c.strategy = %(strategy)s
 ORDER BY e.embedding OPERATOR(rag.<#>) %(q)s::rag.vector
 LIMIT %(k)s
 """
+
+
+_COVERAGE_SQL = """
+SELECT (SELECT count(*) FROM rag.chunks WHERE strategy = %(strategy)s),
+       (SELECT count(*) FROM rag.chunk_embeddings e JOIN rag.chunks c USING (chunk_id)
+        WHERE c.strategy = %(strategy)s AND e.model_name = %(model)s)
+"""
+
+
+def db_vector_counts(url: str, model_name: str, strategy: str) -> tuple[int, int]:
+    """(chunks of the strategy, vectors of the model for them), as the reader."""
+    import psycopg
+
+    with psycopg.connect(url) as conn:
+        conn.read_only = True
+        row = conn.execute(
+            _COVERAGE_SQL, {"strategy": strategy, "model": model_name}
+        ).fetchone()
+    return int(row[0]), int(row[1])
 
 
 def db_search(
@@ -150,8 +196,9 @@ def get_retriever(
 ) -> Retriever:
     """Retriever for one embedding backend (default: EMBEDDING_BACKEND), cached.
 
+    Stops with SystemExit when not every chunk has a vector of that backend's model.
     "local" loads the pinned model once; "openai" embeds each question with the API
-    (no torch needed).
+    (no torch needed) and reports its tokens and cost.
     """
     import os
 
@@ -165,13 +212,27 @@ def get_retriever(
         raise SystemExit("DATABASE_URL_READER is not set in .env")
     backend = backend or backend_from_env()
     settings = backend_settings(backend)
+    name = model_id(settings["repo"], settings["revision"])
+    error = vector_coverage_error(
+        *db_vector_counts(url, name, strategy), backend, name, strategy
+    )
+    if error:
+        raise SystemExit(error)
     encoder = Encoder(backend, settings)
     if backend == "local":
         encoder.encode(["warm-up"])  # load the model now, not on the first question
-    name = model_id(settings["repo"], settings["revision"])
+
+    def embed(text: str) -> tuple[Any, int]:
+        before = encoder.tokens
+        vec = encoder.encode([text])[0]
+        return vec, encoder.tokens - before
+
+    api_model = settings.get("api_model")
     return Retriever(
-        embed=lambda text: encoder.encode([text])[0],
+        embed=embed,
         search=lambda vec, s, e, k: db_search(url, name, strategy, vec, s, e, k),
+        model=api_model,
+        price_per_mtok=config.EMBEDDING_PRICES_USD_PER_MTOK.get(api_model or ""),
     )
 
 
