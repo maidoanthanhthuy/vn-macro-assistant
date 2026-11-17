@@ -19,8 +19,18 @@ BEGIN
     END IF;
 END
 $$;
-ALTER ROLE vnmacro_reader LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT
-    NOREPLICATION NOBYPASSRLS;
+ALTER ROLE vnmacro_reader LOGIN NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION
+    NOBYPASSRLS;
+-- Only a superuser may name the SUPERUSER attribute (PostgreSQL 16+), even to turn it
+-- off; managed services such as Neon run this file as a non-superuser owner, and a
+-- role created by a non-superuser can never be a superuser anyway.
+DO $$
+BEGIN
+    IF (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) THEN
+        ALTER ROLE vnmacro_reader NOSUPERUSER;
+    END IF;
+END
+$$;
 
 -- Per-role settings (applied at every new session of the role)
 ALTER ROLE vnmacro_reader SET default_transaction_read_only = on;
@@ -72,8 +82,18 @@ BEGIN
     END IF;
 END
 $$;
-ALTER ROLE vnmacro_logger LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT
-    NOREPLICATION NOBYPASSRLS;
+ALTER ROLE vnmacro_logger LOGIN NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION
+    NOBYPASSRLS;
+-- Only a superuser may name the SUPERUSER attribute (PostgreSQL 16+), even to turn it
+-- off; managed services such as Neon run this file as a non-superuser owner, and a
+-- role created by a non-superuser can never be a superuser anyway.
+DO $$
+BEGIN
+    IF (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) THEN
+        ALTER ROLE vnmacro_logger NOSUPERUSER;
+    END IF;
+END
+$$;
 ALTER ROLE vnmacro_logger SET statement_timeout = '5s';
 ALTER ROLE vnmacro_logger SET search_path = app;
 

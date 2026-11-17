@@ -224,6 +224,12 @@ LLM-written SQL to the tables in `public`. The privileges are the hard limit; re
 session defaults the role could change itself, so they add depth but do not replace the
 privileges. The timeout also stops runaway queries.
 
+The same file also runs on Neon (`python -m vnmacro.roles apply|check --target neon`),
+where the owner is not a superuser: the `NOSUPERUSER` attribute is only set when the
+owner is a superuser (PostgreSQL 16+ forbids naming it otherwise; a role created by a
+non-superuser can never be one), and passwords are sent as plain text over TLS because
+Neon rejects pre-hashed passwords.
+
 The load (`load_db`) empties and refills tables with `TRUNCATE` + `COPY`, so the grants
 survive every load. `DROP SCHEMA public CASCADE` removes them: rerun `apply` afterwards.
 

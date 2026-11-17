@@ -4,13 +4,16 @@ Run from the repository root (database running, .env filled in):
 
     PYTHONPATH=src python -m vnmacro.roles apply   # run sql/roles.sql, set passwords
     PYTHONPATH=src python -m vnmacro.roles check   # connect as each role, try actions
+    PYTHONPATH=src python -m vnmacro.roles check --target neon
 
-`apply` connects as the owner (POSTGRES_* in .env), runs sql/roles.sql and sets the
-password of every role in config.DB_ROLE_ENV from .env. Passwords are hashed (SCRAM)
-on this machine, so the plain text is never sent to the server, printed or logged.
-`check` connects with each role's DATABASE_URL_* and prints one PASS/FAIL line per
-action; the logger's test INSERT is rolled back, and the owner then deletes any
-leftover test row.
+`--target` picks the database (config.DB_TARGETS): local (default, owner from
+POSTGRES_*) or neon (owner NEON_DATABASE_URL, a non-superuser). `apply` connects as the
+owner, runs sql/roles.sql and sets the password of every role of the target from
+.env. Locally, passwords are hashed (SCRAM) on this machine, so the plain text is never
+sent to the server; Neon accepts only plain-text passwords, sent over TLS. Passwords
+are never printed or logged. `check` connects with each role's URL and prints one
+PASS/FAIL line per action; the logger's test INSERT is rolled back, and the owner
+then deletes any leftover test row.
 """
 
 from __future__ import annotations
@@ -102,19 +105,39 @@ def outcome_text(sqlstate: str | None, error_name: str | None) -> str:
 # ---------- I/O ----------
 
 
-def apply_roles(conn: Any, sql_text: str, passwords: Mapping[str, str]) -> None:
-    """Run the roles SQL and set each role password (SCRAM hash) in one transaction."""
+def owner_connect(target: dict) -> Any:
+    """Owner connection of a target: its URL variable, or POSTGRES_* when None."""
+    import psycopg
+
+    if target["owner_url_env"] is None:
+        return db_connect()
+    url = os.environ.get(target["owner_url_env"])
+    if not url:
+        raise SystemExit(f"Not set in .env: {target['owner_url_env']}")
+    return psycopg.connect(url)
+
+
+def apply_roles(
+    conn: Any, sql_text: str, passwords: Mapping[str, str], hash_passwords: bool = True
+) -> None:
+    """Run the roles SQL and set each role password in one transaction.
+
+    With hash_passwords the password is sent as a SCRAM hash made on this machine;
+    without it (Neon accepts only plain text) it is sent as is, over the TLS connection.
+    """
     from psycopg import sql
 
     with conn.transaction(), conn.cursor() as cur:
         cur.execute(sql_text)
         for role, password in passwords.items():
-            hashed = conn.pgconn.encrypt_password(
-                password.encode(), role.encode(), b"scram-sha-256"
-            ).decode()
+            value = password
+            if hash_passwords:
+                value = conn.pgconn.encrypt_password(
+                    password.encode(), role.encode(), b"scram-sha-256"
+                ).decode()
             cur.execute(
                 sql.SQL("ALTER ROLE {} PASSWORD {}").format(
-                    sql.Identifier(role), sql.Literal(hashed)
+                    sql.Identifier(role), sql.Literal(value)
                 )
             )
 
@@ -142,19 +165,23 @@ def main(argv: list[str] | None = None) -> None:
 
     parser = argparse.ArgumentParser(description="Database roles for the agent.")
     parser.add_argument("action", choices=("apply", "check"))
+    parser.add_argument("--target", choices=sorted(config.DB_TARGETS), default="local")
     args = parser.parse_args(argv)
     load_dotenv()
+    target = config.DB_TARGETS[args.target]
 
     if args.action == "apply":
-        passwords, missing = role_settings(config.DB_ROLE_ENV, os.environ, 0)
+        passwords, missing = role_settings(target["roles"], os.environ, 0)
         if missing:
             raise SystemExit(f"Not set in .env: {', '.join(missing)}")
-        with db_connect() as conn:
-            apply_roles(conn, config.ROLES_SQL.read_text(), passwords)
+        with owner_connect(target) as conn:
+            apply_roles(
+                conn, config.ROLES_SQL.read_text(), passwords, target["hash_passwords"]
+            )
         print(f"Roles {', '.join(passwords)} created/updated from {config.ROLES_SQL}")
         return
 
-    urls, missing = role_settings(config.DB_ROLE_ENV, os.environ, 1)
+    urls, missing = role_settings(target["roles"], os.environ, 1)
     if missing:
         raise SystemExit(f"Not set in .env: {', '.join(missing)}")
     failed = 0
@@ -171,7 +198,7 @@ def main(argv: list[str] | None = None) -> None:
                     f"{'PASS' if ok else 'FAIL'}  {role} {label}: "
                     f"{outcome_text(state, name)}"
                 )
-    with db_connect() as conn, conn.cursor() as cur:
+    with owner_connect(target) as conn, conn.cursor() as cur:
         leftover = cur.execute(PROBE_CLEANUP).rowcount
     ok = leftover == 0
     failed += not ok

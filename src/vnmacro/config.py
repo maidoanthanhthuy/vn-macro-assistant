@@ -213,6 +213,19 @@ DB_ROLE_ENV: dict[str, tuple[str, str]] = {
     READER_ROLE: ("DB_READER_PASSWORD", "DATABASE_URL_READER"),
     LOGGER_ROLE: ("DB_LOGGER_PASSWORD", "DATABASE_URL_LOGGER"),
 }
+# Databases the roles are applied to: the owner's connection (.env URL variable; None =
+# POSTGRES_* of the local Docker database) and each role's (password, URL) variables.
+DB_TARGETS: dict[str, dict] = {
+    "local": {"owner_url_env": None, "roles": DB_ROLE_ENV, "hash_passwords": True},
+    "neon": {
+        "owner_url_env": "NEON_DATABASE_URL",
+        "hash_passwords": False,  # Neon rejects pre-hashed passwords
+        "roles": {
+            READER_ROLE: ("NEON_DB_READER_PASSWORD", "NEON_DATABASE_URL_READER"),
+            LOGGER_ROLE: ("NEON_DB_LOGGER_PASSWORD", "NEON_DATABASE_URL_LOGGER"),
+        },
+    },
+}
 APP_SCHEMA_SQL = Path("sql/app_schema.sql")  # schema app: query log
 
 # Schema context for Text-to-SQL (vnmacro.sql_agent.context)
