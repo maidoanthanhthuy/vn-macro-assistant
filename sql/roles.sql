@@ -2,8 +2,9 @@
 -- "App schema and logger role"). Safe to run many times. Contains no passwords: they
 -- are set by `python -m vnmacro.roles apply`, which runs this file as the owner.
 --
--- vnmacro_reader may only read the tables in schema public. It has no access to
--- schemas rag and app, cannot write, cannot create objects or temporary tables.
+-- vnmacro_reader may only read the tables in schemas public and rag (rag holds public
+-- documents; the SQL check in guard.py still limits generated SQL to public). It has
+-- no access to schema app, cannot write, cannot create objects or temporary tables.
 --
 -- vnmacro_logger may only INSERT into app.query_log. It cannot read the log (other
 -- users' questions), has no access to schemas public and rag, and cannot create
@@ -47,12 +48,16 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO vnmacro_reader;
 -- DROP SCHEMA public CASCADE.
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO vnmacro_reader;
 
--- Schema rag: no access at all (skipped when the schema does not exist yet).
+-- Schema rag: read every table, create nothing (skipped when the schema does not
+-- exist yet). Default privileges as for public.
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'rag') THEN
         REVOKE ALL ON SCHEMA rag FROM vnmacro_reader;
+        GRANT USAGE ON SCHEMA rag TO vnmacro_reader;
         REVOKE ALL ON ALL TABLES IN SCHEMA rag FROM vnmacro_reader;
+        GRANT SELECT ON ALL TABLES IN SCHEMA rag TO vnmacro_reader;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA rag GRANT SELECT ON TABLES TO vnmacro_reader;
     END IF;
 END
 $$;

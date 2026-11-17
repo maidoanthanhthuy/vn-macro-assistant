@@ -7,8 +7,13 @@ human to read. A non-ok agent status is reported as is.
 
     PYTHONPATH=src python -m vnmacro.eval.run_sql_dev
 
-Each run is saved to eval/runs/<time>_sql_dev.jsonl (gitignored). The agent logs to
-app.query_log as usual.
+Router mode routes every dev question, resolves its period and compares the route with
+expected_tool (config.EVAL_ROUTE_MAP):
+
+    PYTHONPATH=src python -m vnmacro.eval.run_sql_dev --router
+
+Each run is saved to eval/runs/<time>_sql_dev.jsonl or <time>_router_dev.jsonl
+(gitignored). The agent logs to app.query_log as usual.
 """
 
 from __future__ import annotations
@@ -199,11 +204,87 @@ def _show(value: Any) -> str:
     return str(value)
 
 
+def expected_route(
+    expected_tool: str, route_map: dict[str, str] = config.EVAL_ROUTE_MAP
+) -> str | None:
+    """Router route expected for a seed question's expected_tool (None if unknown)."""
+    return route_map.get(expected_tool.strip())
+
+
+def router_table(rows: list[dict[str, Any]], q_chars: int = 48) -> str:
+    """Plain-text table: id, question, expected, route, resolved period, correct."""
+    lines = ["id | question | expected | route | period | ok"]
+    for r in rows:
+        period = f"{r['start']}..{r['end']}" if r["start"] else "-"
+        notes = f" ({'; '.join(r['notes'])})" if r["notes"] else ""
+        lines.append(
+            f"{r['id']} | {shorten(r['question'], q_chars)} | {r['expected']} | "
+            f"{r['route'] or r['status']} | {period}{notes} | "
+            f"{'yes' if r['correct'] else 'NO'}"
+        )
+    return "\n".join(lines)
+
+
 # ---------- I/O ----------
 
 
-def main() -> None:
+def _save(rows: list[dict[str, Any]], suffix: str) -> Path:
+    """Write rows as jsonl to eval/runs/<time>_<suffix>.jsonl."""
+    config.EVAL_RUNS_DIR.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    path = Path(config.EVAL_RUNS_DIR) / f"{stamp}_{suffix}.jsonl"
+    with open(path, "w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r, ensure_ascii=False, default=str) + "\n")
+    return path
+
+
+def main_router() -> None:
+    """Route every dev question, resolve its period, compare with expected_tool."""
+    from vnmacro.agent.resolver import resolve_period
+    from vnmacro.agent.router import build_router
+
+    with open(config.SEED_QUESTIONS_FILE, encoding="utf-8", newline="") as f:
+        questions = list(csv.DictReader(f))
+    router, cov = build_router()
+    print(f"Router prompt version {router.prompt_version}, {len(questions)} questions")
+    rows: list[dict[str, Any]] = []
+    for q in questions:
+        res = router.route(q["question"])
+        d = res.decision
+        period = resolve_period(d, cov) if d else None
+        expected = expected_route(q["expected_tool"])
+        rows.append({
+            "id": q["id"], "question": q["question"], "expected": expected,
+            "status": res.status, "route": d.route if d else None,
+            "time_ref": d.time_ref if d else None,
+            "llm_start": d.period_start if d else None,
+            "llm_end": d.period_end if d else None,
+            "reason": d.reason if d else None, "error": res.error,
+            "start": period.start if period else None,
+            "end": period.end if period else None,
+            "notes": list(period.notes) if period else [],
+            "correct": d is not None and d.route == expected,
+            "run_id": res.run_id, "latency_ms": res.latency_ms,
+            "input_tokens": res.input_tokens,
+            "cached_input_tokens": res.cached_input_tokens,
+            "output_tokens": res.output_tokens, "cost_usd": res.cost_usd,
+        })  # fmt: skip
+    path = _save(rows, "router_dev")
+    costs = [r["cost_usd"] for r in rows if r["cost_usd"] is not None]
+    print("\n" + router_table(rows))
+    n_ok = sum(r["correct"] for r in rows)
+    print(
+        f"\nCorrect {n_ok}/{len(rows)} ({n_ok / len(rows):.0%})   "
+        f"total cost ${sum(costs):.6f}   "
+        f"mean time {sum(r['latency_ms'] for r in rows) / len(rows):.0f} ms"
+    )
+    print(f"Saved: {path}")
+
+
+def main(argv: list[str] | None = None) -> None:
     """Run the agent and the reference SQL for every dev SQL question; save jsonl."""
+    import argparse
     import os
 
     from dotenv import load_dotenv
@@ -211,6 +292,11 @@ def main() -> None:
     from vnmacro.sql_agent import runner
     from vnmacro.sql_agent.pipeline import build_pipeline
 
+    parser = argparse.ArgumentParser(description="Run the dev set.")
+    parser.add_argument("--router", action="store_true", help="evaluate the router")
+    if parser.parse_args(argv).router:
+        main_router()
+        return
     load_dotenv()
     with open(config.SEED_QUESTIONS_FILE, encoding="utf-8", newline="") as f:
         questions = select_questions(list(csv.DictReader(f)))
@@ -251,12 +337,7 @@ def main() -> None:
         if len(note) > config.EVAL_NOTE_MIN_CHARS:
             print(f"    note: {note}")
 
-    config.EVAL_RUNS_DIR.mkdir(parents=True, exist_ok=True)
-    stamp = time.strftime("%Y%m%d-%H%M%S")
-    path = Path(config.EVAL_RUNS_DIR) / f"{stamp}_sql_dev.jsonl"
-    with open(path, "w", encoding="utf-8") as f:
-        for r in results:
-            f.write(json.dumps(asdict(r), ensure_ascii=False, default=str) + "\n")
+    path = _save([asdict(r) for r in results], "sql_dev")
 
     costs = [r.cost_usd for r in results if r.cost_usd is not None]
     print("\n" + summary_table(results))

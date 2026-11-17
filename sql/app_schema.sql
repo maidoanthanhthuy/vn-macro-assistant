@@ -2,8 +2,9 @@
 -- Design notes: docs/SCHEMA.md, "App schema and logger role".
 --
 -- Safe to run many times and never deletes log rows: every statement is
--- CREATE ... IF NOT EXISTS or COMMENT. A later column change needs an explicit
--- ALTER TABLE, because CREATE TABLE IF NOT EXISTS leaves an existing table as it is.
+-- CREATE ... IF NOT EXISTS, COMMENT or a guarded constraint change. A later column
+-- change needs an explicit ALTER TABLE, because CREATE TABLE IF NOT EXISTS leaves an
+-- existing table as it is.
 --
 -- Kept out of schema public, so recreating the numeric tables (DROP SCHEMA public
 -- CASCADE) does not touch the log, and the Text-to-SQL schema context (public only)
@@ -40,9 +41,23 @@ CREATE TABLE IF NOT EXISTS app.query_log (
     output_tokens        INTEGER CHECK (output_tokens >= 0),
     cost_usd             NUMERIC(12, 6) CHECK (cost_usd >= 0),
     CHECK (cached_input_tokens <= input_tokens),
-    CHECK (status <> 'ok' OR final_sql IS NOT NULL),
+    CONSTRAINT query_log_ok_needs_sql
+        CHECK (component <> 'text_to_sql' OR status <> 'ok' OR final_sql IS NOT NULL),
     CHECK (status <> 'error' OR error IS NOT NULL)
 );
+
+-- Tables created before the router existed: "ok needs SQL" applied to every component.
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                   WHERE conrelid = 'app.query_log'::regclass
+                     AND conname = 'query_log_ok_needs_sql') THEN
+        ALTER TABLE app.query_log DROP CONSTRAINT IF EXISTS query_log_check1;
+        ALTER TABLE app.query_log ADD CONSTRAINT query_log_ok_needs_sql
+            CHECK (component <> 'text_to_sql' OR status <> 'ok' OR final_sql IS NOT NULL);
+    END IF;
+END
+$$;
 
 CREATE INDEX IF NOT EXISTS query_log_created_at_idx ON app.query_log (created_at);
 
@@ -55,7 +70,7 @@ COMMENT ON COLUMN app.query_log.run_id IS
 COMMENT ON COLUMN app.query_log.created_at IS
     'Time the row was written (end of the request).';
 COMMENT ON COLUMN app.query_log.component IS
-    'Component that handled the request, e.g. ''text_to_sql''.';
+    'Component that handled the request: ''text_to_sql'' or ''router''.';
 COMMENT ON COLUMN app.query_log.question IS
     'User question as received (Vietnamese text). May hold personal data: only the owner can read it.';
 COMMENT ON COLUMN app.query_log.model IS
@@ -65,11 +80,11 @@ COMMENT ON COLUMN app.query_log.prompt_version IS
 COMMENT ON COLUMN app.query_log.status IS
     '''ok'' (SQL ran), ''cannot_answer'' (LLM said SQL cannot answer), ''blocked'' (SQL check rejected every attempt), ''error'' (LLM, database or code error).';
 COMMENT ON COLUMN app.query_log.final_sql IS
-    'SQL that was run for the answer; required when status = ''ok''.';
+    'SQL that was run for the answer; required when a text_to_sql row has status = ''ok''. NULL for the router.';
 COMMENT ON COLUMN app.query_log.attempts IS
     'Number of LLM calls made for this request (first try + retries).';
 COMMENT ON COLUMN app.query_log.sql_attempts IS
-    'JSON array, one object per attempt in order: the SQL tried and the check or database error, if any.';
+    'JSON array, one object per attempt in order: the SQL tried and the check or database error, if any. Router rows: one object with the decision (route, time_ref, period_start, period_end, reason).';
 COMMENT ON COLUMN app.query_log.error IS
     'Final error message; required when status = ''error''.';
 COMMENT ON COLUMN app.query_log.row_count IS

@@ -96,3 +96,23 @@ def test_final_verdict_phase4():
     assert ev.final_verdict("q16", "PASS", ("q16",)) == "phase 4"
     assert ev.final_verdict("q16", "error", ("q16",)) == "error"
     assert ev.final_verdict("q02", "CHECK", ("q16",)) == "CHECK"
+
+
+def test_expected_route():
+    assert ev.expected_route("sql") == "sql"
+    assert ev.expected_route("sql+rag") == "both"
+    assert ev.expected_route("none") == "out_of_scope"
+    assert ev.expected_route("web") is None
+
+
+def test_router_table():
+    base = {"question": "q", "expected": "rag", "status": "ok", "notes": []}
+    rows = [
+        {**base, "id": "q1", "route": "rag", "start": dt.date(2026, 10, 1),
+         "end": dt.date(2026, 10, 31), "correct": True},
+        {**base, "id": "q2", "route": None, "status": "error", "start": None,
+         "end": None, "correct": False, "notes": ["n"]},
+    ]  # fmt: skip
+    lines = ev.router_table(rows).splitlines()
+    assert lines[1] == "q1 | q | rag | rag | 2026-10-01..2026-10-31 | yes"
+    assert lines[2] == "q2 | q | rag | error | - (n) | NO"

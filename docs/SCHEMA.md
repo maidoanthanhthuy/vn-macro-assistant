@@ -209,16 +209,18 @@ Design reasons:
 The Text-to-SQL agent connects as `vnmacro_reader` (`sql/roles.sql`, applied with
 `python -m vnmacro.roles apply`; `check` tests the rules below).
 
-- **Can:** connect to the database and `SELECT` from every table in schema `public`,
-  including tables the owner creates later (default privileges).
-- **Cannot:** read schemas `rag` and `app`; `INSERT`, `UPDATE`, `DELETE` or `TRUNCATE`; create
+- **Can:** connect to the database and `SELECT` from every table in schemas `public` and
+  `rag`, including tables the owner creates later (default privileges).
+- **Cannot:** read schema `app`; `INSERT`, `UPDATE`, `DELETE` or `TRUNCATE`; create
   objects in any schema; create temporary tables (`TEMP` is revoked from `PUBLIC`).
 - **Session settings:** `default_transaction_read_only = on`, `statement_timeout = 5s`,
   `search_path = public`.
 
 Why: two independent layers. The code checks every generated SQL statement before running
 it (Phase 3), and the database refuses anything but reads even if a bad statement gets
-past that check. The privileges are the hard limit; read-only mode and the timeout are
+past that check. Reading `rag` is allowed because it holds only public documents (the
+router reads `rag.documents` for the newest report); the SQL check still limits
+LLM-written SQL to the tables in `public`. The privileges are the hard limit; read-only mode and the timeout are
 session defaults the role could change itself, so they add depth but do not replace the
 privileges. The timeout also stops runaway queries.
 
@@ -227,19 +229,21 @@ survive every load. `DROP SCHEMA public CASCADE` removes them: rerun `apply` aft
 
 ## App schema and logger role
 
-DDL: `sql/app_schema.sql` (safe to rerun: `CREATE ... IF NOT EXISTS` only, never deletes
-log rows; a column change needs an explicit `ALTER TABLE`). Privileges: `sql/roles.sql`.
+DDL: `sql/app_schema.sql` (safe to rerun: `CREATE ... IF NOT EXISTS` and guarded constraint
+changes only, never deletes log rows; a column change needs an explicit `ALTER TABLE`).
+Privileges: `sql/roles.sql`.
 
 | Table | Grain (one row per) | Primary key | Written by |
 |---|---|---|---|
 | `app.query_log` | request to an agent component (all its LLM attempts) | `id` (identity) | `vnmacro_logger` |
 
-Columns: `run_id` (uuid, unique; see below), `created_at`, `component` (e.g. `text_to_sql`), `question`, `model`,
+Columns: `run_id` (uuid, unique; see below), `created_at`, `component` (`text_to_sql` or `router`), `question`, `model`,
 `prompt_version` (short hash of schema context + conventions + examples), `status`
 (`ok`, `cannot_answer`, `blocked`, `error`), `final_sql`, `attempts` (LLM calls),
 `sql_attempts` (JSON array: each SQL tried and its error), `error`, `row_count`,
 `latency_ms`, `input_tokens`, `cached_input_tokens`, `output_tokens`, `cost_usd`.
-CHECKs: `ok` needs `final_sql`, `error` needs `error`, cached tokens <= input tokens,
+CHECKs: a `text_to_sql` row with `ok` needs `final_sql` (router rows have no SQL; their
+decision is the single object in `sql_attempts`), `error` needs `error`, cached tokens <= input tokens,
 counts >= 0, `sql_attempts` is an array.
 
 The agent writes the log as `vnmacro_logger`:

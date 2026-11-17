@@ -304,3 +304,21 @@ EVAL_SQL_KEYS: dict[str, tuple[tuple[str, ...], str]] = {
     "q22": (("gdp_growth_pct", "vintage"), "first"),
     "q23": (("start_date", "pct_change"), "first"),
 }
+
+# Router and period resolver (src/vnmacro/agent/router.py, resolver.py)
+ROUTER_PROMPT_FILE = Path("prompts/router.md")  # role, tools, time rules, examples
+LOG_COMPONENT_ROUTER = "router"
+# Period column of each public table shown to the router as data coverage (min .. max).
+ROUTER_COVERAGE: dict[str, tuple[str, str | None, bool]] = {
+    table: (column, None, False)
+    for table, (column, _, _) in SQL_CONTEXT_COVERAGE.items()
+}
+# "latest" for rag/both = period of the newest document of this type.
+LATEST_REPORT_TYPE = NSO_REPORT_TYPE
+# Dev-set expected_tool -> router route.
+EVAL_ROUTE_MAP: dict[str, str] = {
+    "sql": "sql",
+    "rag": "rag",
+    "sql+rag": "both",
+    "none": "out_of_scope",
+}

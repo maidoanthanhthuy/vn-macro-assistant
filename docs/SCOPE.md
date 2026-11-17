@@ -89,7 +89,9 @@ first version is built, evaluated and deployed with the MVP documents above.
 1. Numeric (SQL): prices, returns, volumes, macro values, comparisons across periods or tickers.
 2. Interpretation (RAG): what a report or press release says, reasons, assessments, policy direction.
 3. Hybrid (SQL + RAG): a number plus its explanation, or market behavior around a policy event.
-4. Out of scope: the assistant must decline clearly instead of guessing.
+4. Out of scope: the assistant must decline clearly instead of guessing. Requests for
+   investment advice ("should I buy X", which stock to pick) are out of scope: decline
+   politely and suggest data the assistant can look up instead (e.g. past returns).
 
 ## 3. Out of scope
 
@@ -165,33 +167,32 @@ embeddings, so deployment needs a single database container.
 | Market data | KBS API (unofficial; fallback: Vietcap), snapshot in `data/raw/` |
 | IMF data | IMF Data Portal SDMX 3.0 API (e.g. via the imfp package) |
 | Agent | Plain LLM tool calling first; LangGraph only if needed |
-| Embeddings | `AITeamVN/Vietnamese_Embedding_v2` (open, pinned commit, CPU) vs one OpenAI API embedding model (1024 dims) |
+| Embeddings | `AITeamVN/Vietnamese_Embedding_v2` (open, pinned commit, CPU) |
 | LLMs | OpenAI `gpt-6-luna` via the official `openai` SDK (one model; no LLM comparison in the first version) |
 | UI | Streamlit |
 | Packaging | Docker Compose |
 
 ## 7. Evaluation plan (summary)
 
-- About 100 test questions with reference answers, written fresh in Phase 5 (not taken
+- About 40 test questions with reference answers, written fresh in Phase 5 (not taken
   from the seed questions; see "Dev set vs test set" below).
-- Target mix: ~40 numeric, ~40 interpretation, ~10 hybrid, ~10 out-of-scope.
+- Target mix: ~16 numeric, ~16 interpretation, ~4 hybrid, ~4 out-of-scope.
 - Metrics: routing accuracy, SQL execution accuracy, retrieval recall@k, answer faithfulness,
   refusal accuracy, latency, cost per question.
-- Planned comparisons (Phase 6), only these two:
-  1. **RAG-only vs agent (RAG + Text-to-SQL)** on the same eval set.
-  2. **Embedding models:** `AITeamVN/Vietnamese_Embedding_v2` vs one API embedding model
-     from the same provider as the LLM chosen in Phase 3, with the API output set to
-     1024 dimensions (same vector column). Measures: retrieval hit@5, latency, cost per
-     query, deployment footprint (model size, RAM, extra services).
+- Planned comparison (Phase 6), only one: **RAG-only vs agent (RAG + Text-to-SQL)** on
+  the same eval set.
+- Deployment (Phase 7): Streamlit app behind a password, a 👍/👎 button per answer
+  (stored with the request's `run_id`), tried by 4 test users. No rate limit in the app:
+  spending is capped by the monthly limit on the OpenAI account.
 - Scoring the first version: q11, q15 and q17 are marked "not applicable (requires 2022+
   documents)" and are not counted in any score. They become scored questions only if the
   optional 2022+ document update (section 2.2) is done.
 
 ### Dev set vs test set
 
-- **Dev set:** the 22 seed questions in `eval/seed_questions.csv`. Use them freely while
+- **Dev set:** the 25 seed questions in `eval/seed_questions.csv`. Use them freely while
   building and tuning prompts.
-- **Test set:** the ~100 questions, written fresh in Phase 5. Never used while tuning. Only
+- **Test set:** the ~40 questions, written fresh in Phase 5. Never used while tuning. Only
   test-set scores are reported in the README.
 
 ### Future work / not in first version
@@ -199,6 +200,9 @@ embeddings, so deployment needs a single database container.
 - Chunking strategies, including balanced splitting (split a long section into roughly
   equal parts) as an alternative to `heading_v1`.
 - LLM comparison (e.g. a strong model vs a smaller, cheaper one).
+- Embedding comparison: `AITeamVN/Vietnamese_Embedding_v2` vs one OpenAI API embedding
+  model at 1024 dimensions (same vector column); measures: retrieval hit@5, latency,
+  cost per query, deployment footprint.
 - Other open embedding models: BGE-M3, Qwen3-Embedding.
 - A reranker on top of vector search.
 - Documents back to 2022 (optional update after Phase 7, section 2.2).
