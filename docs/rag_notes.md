@@ -60,3 +60,76 @@ The full top-5 lists (score, context, first 150 characters) were saved to
    labelled "<report> › Kết luận chung"), only those 24 re-embedded; all checks pass and
    the q10 answer chunk is still rank 1 (score 0.5980). The top-5 tables above were made
    before this fix.
+
+## Retrieval check 2 (Phase 4, step 4b): period filter + semantic search
+
+| Setting | Value |
+|---|---|
+| Date | 2026-11-17 |
+| Model, chunking | as in smoke test 1 (762 chunks, closing-summary labels fixed) |
+| Pipeline | router -> period resolver -> `vnmacro.agent.retrieve` (filter: documents whose period overlaps the resolved period; none overlap -> search all, with a note) |
+| Search | exact dot product, top 5, as `vnmacro_reader` |
+| Query | the full dev question (smoke test 1 used only the RAG part for q16) |
+
+Run: `python -m vnmacro.eval.run_sql_dev --rag`. Graded at document level (an answer
+document from `config.EVAL_RAG_DOCS` in the top 5); the answer-chunk rank is shown for
+comparison with smoke test 1.
+
+| Question | Period filter | Answer doc in top 5 (rank) | Answer chunk rank | Smoke test 1 chunk rank |
+|---|---|---|---|---|
+| q09 Latest report on inflation | 2026-10 | yes (1) | 2 | 46 |
+| q10 Why CPI fell in June 2026 | 2026-06 | yes (1) | 1 | 1 |
+| q11 SBV reasons for 2023 rate cuts | 2023 -> no documents, searched all (note) | n/a | - | - |
+| q12 GDP in H1 2026 | 2026-01..2026-06 | yes (1) | 4 | 3 |
+| q13 Exports in August 2026 | 2026-08 | yes (1) | 2 | 2 |
+| q14 SBV credit policy for 2026 | 2026 | yes (1) | 1 | 1 |
+| q16 Latest inflation + bank stocks | 2026-10 | yes (3) | not in top 5 | 37 |
+
+Answer document in the top 5 for 6 of 6 graded questions. Model load 9.6 s once per
+process; retrieval (embed + search) 190 ms mean per question.
+
+### Findings
+
+1. **The period filter fixes relative periods.** q09's answer chunk moves from rank 46
+   to 2. q16 with only its RAG part as the query ("Lạm phát tháng gần nhất là bao
+   nhiêu?") ranks the answer chunk 2 (smoke test 1: 37).
+2. **The full hybrid question dilutes the search.** With the full q16 question (inflation
+   + bank stocks) the top 2 are chunks of the 2026 SBV directive (banking words), and the
+   October CPI chunk drops out of the top 5. The annual directive overlaps every month
+   of 2026, so it survives any monthly filter. For `both` questions the agent should
+   search with the document part of the question only.
+3. **Document-level grading is easy after filtering.** A one-month filter leaves one
+   NSO report plus the annual directive, so "answer doc in top 5" is nearly guaranteed;
+   chunk-level ranks (and answer quality in Phase 5) are the stricter measure.
+4. q11 falls back to all documents with a note, as intended (no 2023 documents).
+
+## Retrieval check 3 (Phase 4, step 4b): search with the router's rag_query
+
+Same setting as check 2, but the router now also returns `rag_query` (the document part
+of the question, `rag`/`both` only) and `retrieve` searches with it instead of the full
+question (fallback: the full question when `rag_query` is null).
+
+| Question | rag_query | Answer doc rank | Answer chunk rank | Check 2 chunk rank |
+|---|---|---|---|---|
+| q09 | Báo cáo kinh tế - xã hội tháng gần nhất nói gì về lạm phát? | 1 | 2 | 2 |
+| q10 | Vì sao chỉ số giá tiêu dùng tháng 6/2026 giảm so với tháng trước? | 1 | 1 | 1 |
+| q11 | NHNN đưa ra lý do gì khi giảm lãi suất điều hành trong năm 2023? | n/a | - | - |
+| q12 | Báo cáo 6 tháng đầu năm 2026 đánh giá tăng trưởng GDP như thế nào? | 1 | 4 | 4 |
+| q13 | Tình hình xuất khẩu được mô tả thế nào trong báo cáo tháng 8/2026? | 1 | 2 | 2 |
+| q14 | NHNN định hướng điều hành tín dụng năm 2026 ra sao? | 1 | 1 | 1 |
+| q16 | Lạm phát tháng gần nhất là bao nhiêu | 1 | 2 | not in top 5 |
+
+Two identical runs; router still 25/25 on the dev set (prompt version 156b5930ebb8).
+Retrieval 100-110 ms per question after a 5-7 s model load.
+
+### Findings
+
+1. **q16 fixed:** without the bank-stock part, the October CPI chunk is rank 2 again.
+2. **Rephrasing hurts.** Two earlier prompt versions let the LLM rewrite the query.
+   Dropping time words turned q12 into a generic GDP question (the Q1 report won,
+   answer doc rank 4); a free rewrite of q16 ("Lạm phát được ghi nhận bao nhiêu?") put
+   the answer chunk out of the top 5. The final rule: copy the user's words, remove only
+   the parts `sql` answers.
+3. **q11 routing is unstable:** across runs the router sent q11 to `rag` (2023 period,
+   fallback note) or `out_of_scope` (the documents start in 2025). Both lead to a
+   "not covered" answer, but the answer step must handle either.

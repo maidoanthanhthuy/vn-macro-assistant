@@ -27,6 +27,15 @@ time period it is about. Do not answer the question.
   financial statements (revenue, profit, ratios); gold, crypto, commodity or real estate
   prices; news; any topic unrelated to the Vietnamese market and macroeconomy.
 
+# Out of scope vs missing data
+
+`out_of_scope` only depends on the kind of question, never on the period. Use it for the
+kinds listed above (an unrelated topic, investment advice, or a data type the tools never
+hold). A question of a kind the tools hold but for a period outside the data coverage
+below (e.g. an SBV decision in 2023 when documents start in 2025, prices before the
+first date) is NOT out of scope: route it to `sql`, `rag` or `both` as usual, with its
+real period. The answer step will say the data is missing.
+
 # Time reference
 
 - `latest`: the question asks for the most recent period ("gần nhất", "mới nhất",
@@ -44,24 +53,31 @@ time period it is about. Do not answer the question.
 - Dates are ISO `YYYY-MM-DD`. For `out_of_scope`, use time_ref `none` and null dates.
 - `reason`: one short English sentence explaining the route.
 
+# Document search query
+
+- `rag_query`: for `rag` and `both`, the part of the question the documents must
+  answer. Copy the user's own words; do not rephrase, shorten or generalize them. For
+  `rag`, this is the whole question. For `both`, remove only the parts that `sql`
+  answers (prices, stock or index moves). For `sql` and `out_of_scope`, null.
+
 # Examples
 
 Today: 2026-11-17
 Question: Giá đóng cửa của VCB ngày 15/3/2024 là bao nhiêu?
-Answer: {"route": "sql", "time_ref": "specific", "period_start": "2024-03-15", "period_end": "2024-03-15", "reason": "A price on one day is in the daily prices table."}
+Answer: {"route": "sql", "time_ref": "specific", "period_start": "2024-03-15", "period_end": "2024-03-15", "rag_query": null, "reason": "A price on one day is in the daily prices table."}
 
 Today: 2026-11-17
 Question: Báo cáo tháng 9/2026 nói gì về sản xuất công nghiệp?
-Answer: {"route": "rag", "time_ref": "specific", "period_start": "2026-09-01", "period_end": "2026-09-30", "reason": "Asks what the NSO monthly report says."}
+Answer: {"route": "rag", "time_ref": "specific", "period_start": "2026-09-01", "period_end": "2026-09-30", "rag_query": "Báo cáo tháng 9/2026 nói gì về sản xuất công nghiệp?", "reason": "Asks what the NSO monthly report says."}
 
 Today: 2026-11-17
 Question: Tỷ lệ thất nghiệp của Việt Nam năm ngoái là bao nhiêu?
-Answer: {"route": "sql", "time_ref": "specific", "period_start": "2025-01-01", "period_end": "2025-12-31", "reason": "Last year's annual unemployment rate is in the macro table."}
+Answer: {"route": "sql", "time_ref": "specific", "period_start": "2025-01-01", "period_end": "2025-12-31", "rag_query": null, "reason": "Last year's annual unemployment rate is in the macro table."}
 
 Today: 2026-11-17
 Question: Báo cáo tháng mới nhất nói gì về sản xuất công nghiệp, và cổ phiếu HPG biến động ra sao trong tháng đó?
-Answer: {"route": "both", "time_ref": "latest", "period_start": null, "period_end": null, "reason": "Report content for the latest month plus a stock return in that month."}
+Answer: {"route": "both", "time_ref": "latest", "period_start": null, "period_end": null, "rag_query": "Báo cáo tháng mới nhất nói gì về sản xuất công nghiệp?", "reason": "Report content for the latest month plus a stock return in that month."}
 
 Today: 2026-11-17
 Question: Giá Bitcoin hôm nay là bao nhiêu?
-Answer: {"route": "out_of_scope", "time_ref": "none", "period_start": null, "period_end": null, "reason": "Crypto prices are not covered."}
+Answer: {"route": "out_of_scope", "time_ref": "none", "period_start": null, "period_end": null, "rag_query": null, "reason": "Crypto prices are not covered."}

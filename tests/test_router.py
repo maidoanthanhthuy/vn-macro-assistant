@@ -10,6 +10,7 @@ from vnmacro.agent.router import (
     format_documents,
     parse_decision,
     router_log_row,
+    search_query,
     user_message,
 )
 from vnmacro.llm import LLMResponse
@@ -24,6 +25,7 @@ def output(**kw):
         "time_ref": "specific",
         "period_start": "2026-06-01",
         "period_end": "2026-06-30",
+        "rag_query": "rq",
         "reason": "r",
     }
     return json.dumps({**data, **kw})
@@ -48,8 +50,18 @@ def test_parse_decision_ok():
     assert (d.route, d.time_ref) == ("rag", "specific")
     assert d.period_start == dt.date(2026, 6, 1)
     assert d.period_end == dt.date(2026, 6, 30)
+    assert d.rag_query == "rq"
     d = parse_decision(output(time_ref="latest", period_start=None, period_end=None))
     assert d.period_start is None and d.period_end is None
+
+
+def test_rag_query_only_for_document_routes():
+    assert parse_decision(output(route="sql")).rag_query is None
+    assert parse_decision(output(route="both", rag_query="  ")).rag_query is None
+    d = parse_decision(output(route="both", rag_query=None))
+    assert search_query(d, "full question") == "full question"
+    d = parse_decision(output(route="rag", rag_query="CPI?"))
+    assert search_query(d, "full question") == "CPI?"
 
 
 @pytest.mark.parametrize(
@@ -62,6 +74,7 @@ def test_parse_decision_ok():
         json.dumps({"route": "rag"}),
         output(extra=1),
         output(reason=None),
+        output(rag_query=3),
     ],
 )
 def test_parse_decision_rejects(content):
@@ -96,6 +109,7 @@ def test_route_ok_logs_decision():
     assert row["component"] == "router" and row["final_sql"] is None
     step = row["sql_attempts"][0]
     assert step["route"] == "rag" and step["period_start"] == "2026-06-01"
+    assert step["rag_query"] == "rq"
     json.dumps(row["sql_attempts"])  # must be JSON-serialisable
 
 

@@ -28,6 +28,7 @@ WriteLog = Callable[[dict[str, Any]], None]
 
 ROUTES: tuple[str, ...] = ("sql", "rag", "both", "out_of_scope")
 TIME_REFS: tuple[str, ...] = ("latest", "specific", "range", "none")
+RAG_ROUTES: tuple[str, ...] = ("rag", "both")  # routes that search the documents
 SCHEMA_NAME = "route_decision"
 RESPONSE_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -36,9 +37,17 @@ RESPONSE_SCHEMA: dict[str, Any] = {
         "time_ref": {"type": "string", "enum": list(TIME_REFS)},
         "period_start": {"type": ["string", "null"]},
         "period_end": {"type": ["string", "null"]},
+        "rag_query": {"type": ["string", "null"]},
         "reason": {"type": "string"},
     },
-    "required": ["route", "time_ref", "period_start", "period_end", "reason"],
+    "required": [
+        "route",
+        "time_ref",
+        "period_start",
+        "period_end",
+        "rag_query",
+        "reason",
+    ],
     "additionalProperties": False,
 }
 
@@ -52,6 +61,7 @@ class RouteDecision:
     period_start: dt.date | None
     period_end: dt.date | None
     reason: str
+    rag_query: str | None = None  # document part of the question (rag/both only)
 
 
 def _date(value: Any, name: str) -> dt.date | None:
@@ -76,13 +86,24 @@ def parse_decision(content: str) -> RouteDecision:
         raise ValueError("Output route or time_ref is not an allowed value.")
     if not isinstance(data["reason"], str):
         raise ValueError("Output field reason must be a string.")
+    rag_query = data["rag_query"]
+    if rag_query is not None and not isinstance(rag_query, str):
+        raise ValueError("Output field rag_query must be a string or null.")
+    if data["route"] not in RAG_ROUTES:
+        rag_query = None  # only used for document search
     return RouteDecision(
         data["route"],
         data["time_ref"],
         _date(data["period_start"], "period_start"),
         _date(data["period_end"], "period_end"),
         data["reason"],
+        (rag_query or "").strip() or None,
     )
+
+
+def search_query(decision: RouteDecision, question: str) -> str:
+    """Text for document search: the router's rag_query, else the whole question."""
+    return decision.rag_query or question
 
 
 def format_documents(rows: list[tuple[str, str, dt.date, dt.date]]) -> str:
@@ -141,6 +162,7 @@ def router_log_row(
             time_ref=d.time_ref,
             period_start=d.period_start.isoformat() if d.period_start else None,
             period_end=d.period_end.isoformat() if d.period_end else None,
+            rag_query=d.rag_query,
             reason=d.reason,
         )
     return {

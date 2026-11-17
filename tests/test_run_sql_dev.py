@@ -116,3 +116,21 @@ def test_router_table():
     lines = ev.router_table(rows).splitlines()
     assert lines[1] == "q1 | q | rag | rag | 2026-10-01..2026-10-31 | yes"
     assert lines[2] == "q2 | q | rag | error | - (n) | NO"
+
+
+def test_rag_table():
+    base = {"question": "q", "notes": [], "gold": ["d"], "rag_query": None,
+            "chunk_rank": None}  # fmt: skip
+    rows = [
+        {**base, "id": "q1", "filtered": True, "start": dt.date(2026, 10, 1),
+         "end": dt.date(2026, 10, 31), "rank": 2, "rag_query": "rq",
+         "chunk_rank": 3},
+        {**base, "id": "q2", "filtered": False, "start": None, "end": None,
+         "rank": None, "gold": [], "notes": ["n"]},
+        {**base, "id": "q3", "filtered": True, "start": dt.date(2026, 1, 1),
+         "end": dt.date(2026, 1, 31), "rank": None},
+    ]  # fmt: skip
+    lines = ev.rag_table(rows).splitlines()
+    assert lines[1] == "q1 | q | rq | 2026-10-01..2026-10-31 | yes | 2 | 3"
+    assert lines[2] == "q2 | q | - | none (n) | n/a (no answer doc) | - | -"
+    assert lines[3] == "q3 | q | - | 2026-01-01..2026-01-31 | NO | - | -"

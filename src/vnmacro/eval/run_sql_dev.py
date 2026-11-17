@@ -12,6 +12,11 @@ expected_tool (config.EVAL_ROUTE_MAP):
 
     PYTHONPATH=src python -m vnmacro.eval.run_sql_dev --router
 
+RAG mode routes and resolves each rag / sql+rag question, retrieves the top 5 chunks and
+checks at document level that an answer document (config.EVAL_RAG_DOCS) is among them:
+
+    PYTHONPATH=src python -m vnmacro.eval.run_sql_dev --rag
+
 Each run is saved to eval/runs/<time>_sql_dev.jsonl or <time>_router_dev.jsonl
 (gitignored). The agent logs to app.query_log as usual.
 """
@@ -225,6 +230,27 @@ def router_table(rows: list[dict[str, Any]], q_chars: int = 48) -> str:
     return "\n".join(lines)
 
 
+def rag_table(rows: list[dict[str, Any]], q_chars: int = 48) -> str:
+    """Plain-text table: id, question, filtered period, in top k, rank of answer doc."""
+    lines = [
+        "id | question | rag_query | period filter | in top 5 | doc rank | chunk rank"
+    ]
+    for r in rows:
+        period = f"{r['start']}..{r['end']}" if r["filtered"] else "none"
+        if r["notes"]:
+            period += f" ({'; '.join(r['notes'])})"
+        if not r["gold"]:
+            hit = "n/a (no answer doc)"
+        else:
+            hit = "yes" if r["rank"] else "NO"
+        lines.append(
+            f"{r['id']} | {shorten(r['question'], q_chars)} | "
+            f"{r['rag_query'] or '-'} | {period} | {hit} | "
+            f"{r['rank'] or '-'} | {r['chunk_rank'] or '-'}"
+        )
+    return "\n".join(lines)
+
+
 # ---------- I/O ----------
 
 
@@ -282,6 +308,58 @@ def main_router() -> None:
     print(f"Saved: {path}")
 
 
+def main_rag() -> None:
+    """Router -> resolver -> retrieve for every rag / sql+rag dev question."""
+    from vnmacro.agent.resolver import resolve_period
+    from vnmacro.agent.retrieve import first_rank, get_retriever
+    from vnmacro.agent.router import build_router, search_query
+
+    with open(config.SEED_QUESTIONS_FILE, encoding="utf-8", newline="") as f:
+        questions = [
+            r for r in csv.DictReader(f) if r["expected_tool"] in ("rag", "sql+rag")
+        ]
+    router, cov = build_router()
+    t0 = time.perf_counter()
+    retriever = get_retriever()
+    load_s = time.perf_counter() - t0
+    rows: list[dict[str, Any]] = []
+    for q in questions:
+        res = router.route(q["question"])
+        period = resolve_period(res.decision, cov) if res.decision else None
+        start = period.start if period else None
+        end = period.end if period else None
+        t1 = time.perf_counter()
+        query = (
+            search_query(res.decision, q["question"]) if res.decision else q["question"]
+        )
+        hits = retriever.retrieve(query, start, end)
+        ms = round((time.perf_counter() - t1) * 1000)
+        gold = config.EVAL_RAG_DOCS.get(q["id"], ())
+        rows.append({
+            "id": q["id"], "question": q["question"],
+            "route": res.decision.route if res.decision else None,
+            "start": start, "end": end, "filtered": hits.filtered,
+            "notes": [*(period.notes if period else ()), *hits.notes],
+            "rag_query": res.decision.rag_query if res.decision else None,
+            "gold": list(gold), "rank": first_rank(hits.chunks, gold),
+            "chunk_rank": first_rank(
+                hits.chunks, config.EVAL_RAG_CHUNKS.get(q["id"], ()), "chunk_id"
+            ),
+            "top": [(c.chunk_id, round(c.score, 4)) for c in hits.chunks],
+            "retrieve_ms": ms, "router_cost_usd": res.cost_usd,
+        })  # fmt: skip
+    path = _save(rows, "rag_dev")
+    print("\n" + rag_table(rows))
+    graded = [r for r in rows if r["gold"]]
+    n_hit = sum(r["rank"] is not None for r in graded)
+    mean_ms = sum(r["retrieve_ms"] for r in rows) / len(rows)
+    print(
+        f"\nAnswer doc in top 5: {n_hit}/{len(graded)}   model load {load_s:.1f} s   "
+        f"mean retrieve time {mean_ms:.0f} ms (embed + search)"
+    )
+    print(f"Saved: {path}")
+
+
 def main(argv: list[str] | None = None) -> None:
     """Run the agent and the reference SQL for every dev SQL question; save jsonl."""
     import argparse
@@ -294,8 +372,13 @@ def main(argv: list[str] | None = None) -> None:
 
     parser = argparse.ArgumentParser(description="Run the dev set.")
     parser.add_argument("--router", action="store_true", help="evaluate the router")
-    if parser.parse_args(argv).router:
+    parser.add_argument("--rag", action="store_true", help="evaluate retrieval")
+    args = parser.parse_args(argv)
+    if args.router:
         main_router()
+        return
+    if args.rag:
+        main_rag()
         return
     load_dotenv()
     with open(config.SEED_QUESTIONS_FILE, encoding="utf-8", newline="") as f:

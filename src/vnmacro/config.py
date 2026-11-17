@@ -322,3 +322,26 @@ EVAL_ROUTE_MAP: dict[str, str] = {
     "sql+rag": "both",
     "none": "out_of_scope",
 }
+
+# Retrieval for the agent (src/vnmacro/agent/retrieve.py)
+RETRIEVE_TOP_K = 5
+# Dev-set retrieval check: documents that hold the answer (from answer_source and the
+# question's period). q11 has none: its 2023 SBV documents are not loaded.
+EVAL_RAG_DOCS: dict[str, tuple[str, ...]] = {
+    "q09": ("nso_report_2026_10",),
+    "q10": ("nso_report_2026_06",),
+    "q11": (),
+    "q12": ("nso_report_2026_06",),
+    "q13": ("nso_report_2026_08",),
+    "q14": ("sbv_directive_2026_01", "sbv_press_2025_q4"),
+    "q16": ("nso_report_2026_10",),
+}
+# Chunks that hold the answer (docs/rag_notes.md, smoke test 1): chunk-level rank.
+EVAL_RAG_CHUNKS: dict[str, tuple[str, ...]] = {
+    "q09": ("nso_report_2026_10_029",),
+    "q10": ("nso_report_2026_06_052",),
+    "q12": ("nso_report_2026_06_003",),
+    "q13": ("nso_report_2026_08_026",),
+    "q14": ("sbv_directive_2026_01_002",),
+    "q16": ("nso_report_2026_10_029",),
+}
