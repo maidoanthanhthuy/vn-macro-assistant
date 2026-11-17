@@ -8,6 +8,7 @@ from vnmacro.agent.router import (
     Router,
     build_fixed_prompt,
     format_documents,
+    format_indicators,
     parse_decision,
     router_log_row,
     search_query,
@@ -140,3 +141,12 @@ def test_log_row_without_decision():
 def test_user_message():
     msg = user_message("Năm ngoái?", dt.date(2026, 1, 5))
     assert msg == "Today: 2026-01-05\nQuestion: Năm ngoái?"
+
+
+def test_format_indicators():
+    text = format_indicators([("SL.UEM", "Thất nghiệp"), ("CPI", "Chỉ số giá")])
+    assert text.splitlines() == [
+        "## Indicators in the sql tables (code: name)",
+        "- CPI: Chỉ số giá",
+        "- SL.UEM: Thất nghiệp",
+    ]

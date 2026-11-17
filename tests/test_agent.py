@@ -26,7 +26,8 @@ class FakeRouter:
     def __init__(self, decision, log):
         self.decision, self.log = decision, log
 
-    def route(self, question):
+    def route(self, question, today=None):
+        self.today = today
         self.log({"component": "router"})
         return SimpleNamespace(decision=self.decision, cost_usd=0.001, error="boom")
 
@@ -67,13 +68,17 @@ def make(route, time_ref="latest", rag_query=None):
     return agent, rows, calls, answerer
 
 
-def test_sql_question_adds_period_and_scope_for_both_only():
+def test_sql_question_adds_today_and_period_scope_for_both():
     p = ResolvedPeriod(D(2026, 10, 1), D(2026, 10, 31))
-    assert sql_question("Q", "sql", p) == "Q"
-    text = sql_question("Q", "both", p)
-    assert text.startswith("Q\n\n") and "2026-10-01 to 2026-10-31" in text
-    assert "cannot_answer only if no part" in text
-    assert "period" not in sql_question("Q", "both", ResolvedPeriod(None, None))
+    today = D(2026, 11, 17)
+    assert sql_question("Q", "sql", p, today) == "Q\n\nToday's date: 2026-11-17."
+    text = sql_question("Q", "both", p, today)
+    assert text.startswith("Q\n\nToday's date: 2026-11-17.")
+    assert (
+        "2026-10-01 to 2026-10-31" in text and "cannot_answer only if no part" in text
+    )
+    no_period = sql_question("Q", "both", ResolvedPeriod(None, None), today)
+    assert "period" not in no_period
 
 
 def test_period_notes():
@@ -98,7 +103,9 @@ def test_retrieval_log_row():
 
 def test_both_searches_documents_first_and_passes_period_to_sql():
     agent, rows, calls, answerer = make("both", rag_query="CPI?")
-    res = agent.ask("Q")
+    res = agent.ask("Q", today=D(2026, 11, 17))
+    assert agent.router.today == D(2026, 11, 17)
+    assert "Today's date: 2026-11-17." in calls["sql"][0]
     assert calls["retrieve"] == [("CPI?", D(2026, 10, 1), D(2026, 10, 31))]
     assert "2026-10-01 to 2026-10-31" in calls["sql"][0]
     assert [r["component"] for r in rows] == ["router", "retrieve", "answer"]
@@ -113,7 +120,7 @@ def test_both_searches_documents_first_and_passes_period_to_sql():
 def test_sql_route_skips_retrieval():
     agent, _, calls, answerer = make("sql")
     res = agent.ask("Q")
-    assert calls["retrieve"] == [] and calls["sql"] == ["Q"]
+    assert calls["retrieve"] == [] and calls["sql"][0].startswith("Q\n\nToday's date:")
     assert res.chunks == [] and answerer.calls[0][4] == []
 
 

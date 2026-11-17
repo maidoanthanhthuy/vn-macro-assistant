@@ -36,6 +36,15 @@ below (e.g. an SBV decision in 2023 when documents start in 2025, prices before 
 first date) is NOT out of scope: route it to `sql`, `rag` or `both` as usual, with its
 real period. The answer step will say the data is missing.
 
+Every indicator listed under "Indicators in the sql tables" below (exchange rate,
+lending rate, unemployment, broad money, FDI, exports, GDP, inflation, ...) is in scope
+for `sql`, for any year, even when that year is not in the data yet. When unsure whether
+a number exists, route to the tool that would hold it; never use `out_of_scope` because
+data might be missing.
+Intraday or real-time prices mean prices during a session ("lúc 10 giờ", "đang giao
+dịch"). A daily close for a calendar day ("đóng cửa hôm nay", "giá hôm qua") is `sql`
+with time_ref `specific` for that day, even if that day is not in the data yet.
+
 # Time reference
 
 - `latest`: the question asks for the most recent period ("gần nhất", "mới nhất",

@@ -106,6 +106,8 @@ first version is built, evaluated and deployed with the MVP documents above.
 ## 4. Conventions (to keep answers and the evaluation set consistent)
 
 - "Latest month" / "tháng gần nhất" = the most recent report available in the database, not today's date.
+- "Hôm nay" / "hôm qua" are calendar days. If that day has no data yet, the answer says so
+  and gives the value of the latest day with data, with its date.
 - Returns are close-to-close, in percent, using the last trading day of each period.
 - If there is no close before the period (first period with data), the return starts from
   the first close in the period; the answer states the actual start date and that the
@@ -190,7 +192,7 @@ embeddings, so deployment needs a single database container.
 
 ### Dev set vs test set
 
-- **Dev set:** the 25 seed questions in `eval/seed_questions.csv`. Use them freely while
+- **Dev set:** the 29 seed questions in `eval/seed_questions.csv`. Use them freely while
   building and tuning prompts.
 - **Test set:** the ~40 questions, written fresh in Phase 5. Never used while tuning. Only
   test-set scores are reported in the README.

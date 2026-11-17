@@ -61,11 +61,13 @@ class AgentResult:
     error: str | None = None
 
 
-def sql_question(question: str, route: str, period: ResolvedPeriod) -> str:
-    """Question for Text-to-SQL; for `both`, the period found and a scope hint."""
+def sql_question(
+    question: str, route: str, period: ResolvedPeriod, today: dt.date
+) -> str:
+    """Question for Text-to-SQL with today's date; for `both`, the period and a hint."""
+    lines = [question, "", f"Today's date: {today.isoformat()}."]
     if route != "both":
-        return question
-    lines = [question, ""]
+        return "\n".join(lines)
     if period.start is not None:
         lines.append(
             f"Use this period (resolved from the latest documents): "
@@ -117,14 +119,14 @@ class Agent:
     answerer: Answerer
     log: RequestLog
 
-    def ask(self, question: str) -> AgentResult:
+    def ask(self, question: str, today: dt.date | None = None) -> AgentResult:
         """Route, resolve the period, gather data, write the answer."""
         start = time.perf_counter()
         self.log.request_id = str(uuid.uuid4())
         res = AgentResult(self.log.request_id, question, "", "error")
         costs: list[float | None] = []
         try:
-            self._run(question, res, costs)
+            self._run(question, res, costs, today or dt.date.today())
         except Exception as e:  # unexpected failure in a step
             res.status, res.error = "error", f"{type(e).__name__}: {e}"
             res.text = config.ANSWER_ERROR_TEXT
@@ -155,9 +157,15 @@ class Agent:
         res.latency_ms = round((time.perf_counter() - start) * 1000)
         return res
 
-    def _run(self, question: str, res: AgentResult, costs: list[float | None]) -> None:
+    def _run(
+        self,
+        question: str,
+        res: AgentResult,
+        costs: list[float | None],
+        today: dt.date,
+    ) -> None:
         """The steps of `ask`, filling res in place."""
-        routed = self.router.route(question)
+        routed = self.router.route(question, today)
         costs.append(routed.cost_usd)
         d = routed.decision
         if d is None:
@@ -175,7 +183,7 @@ class Agent:
             self.log(retrieval_log_row(question, query, hits, ms))
             res.chunks, res.notes = hits.chunks, res.notes + list(hits.notes)
         if d.route in SQL_ROUTES:
-            s = self.text_to_sql(sql_question(question, d.route, res.period))
+            s = self.text_to_sql(sql_question(question, d.route, res.period, today))
             costs.append(s.cost_usd)
             res.sql = SQLData(s.status, s.sql, s.columns, s.rows, s.notes, s.reason)
 

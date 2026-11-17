@@ -125,6 +125,13 @@ def user_message(question: str, today: dt.date) -> str:
     return f"Today: {today.isoformat()}\nQuestion: {question}"
 
 
+def format_indicators(rows: list[tuple[str, str]]) -> str:
+    """Markdown list of the annual and monthly indicators in the numeric tables."""
+    lines = ["## Indicators in the sql tables (code: name)"]
+    lines += [f"- {code}: {name}" for code, name in sorted(rows)]
+    return "\n".join(lines)
+
+
 def build_fixed_prompt(instructions: str, coverage_text: str, docs_text: str) -> str:
     """Fixed system prompt: instructions and examples, then the data coverage."""
     data = "# Data available\n\n" + coverage_text.strip() + "\n\n" + docs_text.strip()
@@ -227,14 +234,17 @@ class Router:
 
 # ---------- I/O ----------
 
+_INDICATORS_SQL = "SELECT indicator_code, name FROM indicators ORDER BY 1"
 _DOCUMENTS_SQL = (
     "SELECT doc_type, reference_period, period_start, period_end "
     "FROM rag.documents ORDER BY doc_type, period_start"
 )
 
 
-def fetch_data_info(url: str) -> tuple[list[Any], list[tuple[str, str, Any, Any]]]:
-    """Read public table coverage and rag.documents periods as the reader."""
+def fetch_data_info(
+    url: str,
+) -> tuple[list[Any], list[tuple[str, str, Any, Any]], list[tuple[str, str]]]:
+    """Read table coverage, rag.documents periods and indicators as the reader."""
     import psycopg
 
     from vnmacro.sql_agent.context import fetch_coverage
@@ -245,7 +255,8 @@ def fetch_data_info(url: str) -> tuple[list[Any], list[tuple[str, str, Any, Any]
             conn, config.SQL_CONTEXT_SCHEMA, config.ROUTER_COVERAGE
         )
         documents = [tuple(r) for r in conn.execute(_DOCUMENTS_SQL).fetchall()]
-    return coverage, documents
+        indicators = [tuple(r) for r in conn.execute(_INDICATORS_SQL).fetchall()]
+    return coverage, documents, indicators
 
 
 def build_router() -> tuple[Router, Any]:
@@ -265,10 +276,12 @@ def build_router() -> tuple[Router, Any]:
     logger_url = os.environ.get("DATABASE_URL_LOGGER")
     if not reader_url or not logger_url:
         raise SystemExit("DATABASE_URL_READER and DATABASE_URL_LOGGER must be set")
-    coverage, documents = fetch_data_info(reader_url)
+    coverage, documents, indicators = fetch_data_info(reader_url)
     fixed = build_fixed_prompt(
         config.ROUTER_PROMPT_FILE.read_text(encoding="utf-8"),
-        format_coverage(sorted(coverage, key=lambda c: c.table)),
+        format_coverage(sorted(coverage, key=lambda c: c.table))
+        + "\n\n"
+        + format_indicators(indicators),
         format_documents(documents),
     )
     model = llm.model_from_env()
