@@ -22,7 +22,7 @@ from vnmacro import config
 from vnmacro.agent.answer import Answerer, SQLData
 from vnmacro.agent.resolver import DataCoverage, ResolvedPeriod, resolve_period
 from vnmacro.agent.retrieve import RetrievalResult, RetrievedChunk
-from vnmacro.agent.router import RAG_ROUTES, Router, search_query
+from vnmacro.agent.router import RAG_ROUTES, Router, Turn, search_query
 
 RetrieveFn = Callable[[str, dt.date | None, dt.date | None], RetrievalResult]
 TextToSQLFn = Callable[[str], Any]  # returns a sql_agent.pipeline.SQLResult
@@ -91,6 +91,16 @@ class AgentResult:
     latency_ms: int = 0
     cost_usd: float = 0.0
     error: str | None = None
+    standalone_question: str | None = None  # set only when the router rewrote it
+    short_answer: str = ""  # for the session history of follow-up questions
+
+
+def resolved_question(question: str, standalone: str | None) -> str | None:
+    """The router's rewrite when it differs from the question (spaces, case ignored)."""
+    if not standalone:
+        return None
+    same = " ".join(standalone.split()).lower() == " ".join(question.split()).lower()
+    return None if same else standalone
 
 
 def sql_question(
@@ -158,11 +168,13 @@ class Agent:
         today: dt.date | None = None,
         on_step: OnStep | None = None,
         session_id: str | None = None,
+        turns: list[Turn] | tuple[Turn, ...] = (),
     ) -> AgentResult:
         """Route, resolve the period, gather data, write the answer.
 
         on_step, if given, is called with each step name (STEPS) before that step runs,
         so a UI can show progress. session_id (anonymous app session) goes to the log.
+        turns: earlier (question, short answer) pairs of the session, for follow-ups.
         """
         start = time.perf_counter()
         self.log.request_id = str(uuid.uuid4())
@@ -171,7 +183,12 @@ class Agent:
         costs: list[float | None] = []
         try:
             self._run(
-                question, res, costs, today or dt.date.today(), on_step or _no_step
+                question,
+                res,
+                costs,
+                today or dt.date.today(),
+                on_step or _no_step,
+                turns,
             )
         except Exception as e:  # unexpected failure in a step
             res.status, res.error = "error", f"{type(e).__name__}: {e}"
@@ -212,16 +229,19 @@ class Agent:
         costs: list[float | None],
         today: dt.date,
         on_step: OnStep,
+        turns: list[Turn] | tuple[Turn, ...] = (),
     ) -> None:
         """The steps of `ask`, filling res in place."""
         on_step("route")
-        routed = self.router.route(question, today)
+        routed = self.router.route(question, today, turns)
         costs.append(routed.cost_usd)
         d = routed.decision
         if d is None:
             res.error, res.text = routed.error, config.ANSWER_ERROR_TEXT
             return
         res.route, res.time_ref, res.rag_query = d.route, d.time_ref, d.rag_query
+        res.standalone_question = resolved_question(question, d.standalone_question)
+        question = res.standalone_question or question  # later steps see the rewrite
         res.period = resolve_period(d, self.coverage)
         res.notes = period_notes(res.period)
 
@@ -245,6 +265,7 @@ class Agent:
         costs.append(ans.cost_usd)
         res.text, res.sources, res.error = ans.text, ans.sources, ans.error
         res.status = ans.status
+        res.short_answer = ans.draft.short_answer if ans.draft else ""
 
 
 def _no_step(step: str) -> None:

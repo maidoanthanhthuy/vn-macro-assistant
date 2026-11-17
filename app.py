@@ -32,6 +32,7 @@ from vnmacro.app.helpers import (  # noqa: E402
     feedback_row,
     local_today,
     password_ok,
+    recent_turns,
 )
 
 load_dotenv()
@@ -89,6 +90,7 @@ def ask(question: str) -> None:
             today=local_today(),
             on_step=on_step,
             session_id=st.session_state["session_id"],
+            turns=recent_turns(st.session_state["history"]),
         )
         done = "Đã xong" if res.status == "ok" else "Có lỗi khi xử lý"
         status.update(label=done, state="complete", expanded=False)
@@ -104,6 +106,8 @@ def ask(question: str) -> None:
             "rag_query": res.rag_query,
             "sql": res.sql.sql if res.sql else None,
             "request_id": res.request_id,
+            "short_answer": res.short_answer,
+            "standalone": res.standalone_question,
         }
     )
 
@@ -128,7 +132,12 @@ def show_answer(item: dict) -> None:
         if item["route"]:
             with st.expander("Chi tiết"):
                 st.markdown(
-                    details_markdown(item["route"], item["period"], item["rag_query"])
+                    details_markdown(
+                        item["route"],
+                        item["period"],
+                        item["rag_query"],
+                        item.get("standalone"),
+                    )
                 )
                 if item["sql"]:
                     st.code(item["sql"], language="sql")

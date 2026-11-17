@@ -39,6 +39,7 @@ RESPONSE_SCHEMA: dict[str, Any] = {
         "period_start": {"type": ["string", "null"]},
         "period_end": {"type": ["string", "null"]},
         "rag_query": {"type": ["string", "null"]},
+        "standalone_question": {"type": "string"},
         "reason": {"type": "string"},
     },
     "required": [
@@ -47,6 +48,7 @@ RESPONSE_SCHEMA: dict[str, Any] = {
         "period_start",
         "period_end",
         "rag_query",
+        "standalone_question",
         "reason",
     ],
     "additionalProperties": False,
@@ -63,6 +65,9 @@ class RouteDecision:
     period_end: dt.date | None
     reason: str
     rag_query: str | None = None  # document part of the question (rag/both only)
+    standalone_question: str | None = (
+        None  # question rewritten with the session context
+    )
 
 
 def _date(value: Any, name: str) -> dt.date | None:
@@ -92,6 +97,9 @@ def parse_decision(content: str) -> RouteDecision:
         raise ValueError("Output field rag_query must be a string or null.")
     if data["route"] not in RAG_ROUTES:
         rag_query = None  # only used for document search
+    standalone = data["standalone_question"]
+    if not isinstance(standalone, str):
+        raise ValueError("Output field standalone_question must be a string.")
     return RouteDecision(
         data["route"],
         data["time_ref"],
@@ -99,6 +107,7 @@ def parse_decision(content: str) -> RouteDecision:
         _date(data["period_end"], "period_end"),
         data["reason"],
         (rag_query or "").strip() or None,
+        standalone.strip() or None,
     )
 
 
@@ -121,9 +130,32 @@ def format_documents(rows: list[tuple[str, str, dt.date, dt.date]]) -> str:
     return "\n".join(lines)
 
 
-def user_message(question: str, today: dt.date) -> str:
-    """User message: today's date (for relative periods), then the question."""
-    return f"Today: {today.isoformat()}\nQuestion: {question}"
+Turn = tuple[str, str]  # (question, short answer) of an earlier turn in the session
+
+
+def format_history(
+    turns: list[Turn] | tuple[Turn, ...],
+    max_chars: int = config.CONTEXT_ANSWER_MAX_CHARS,
+) -> str:
+    """Earlier turns for the router, oldest first; long answers are cut."""
+    lines = []
+    for question, answer in turns:
+        short = " ".join(answer.split())
+        if len(short) > max_chars:
+            short = short[:max_chars].rstrip() + "…"
+        lines += [f"- Q: {' '.join(question.split())}", f"  A: {short}"]
+    return "\n".join(lines)
+
+
+def user_message(
+    question: str, today: dt.date, turns: list[Turn] | tuple[Turn, ...] = ()
+) -> str:
+    """User message: today's date, earlier turns of the session, the question."""
+    parts = [f"Today: {today.isoformat()}"]
+    if turns:
+        parts.append("Previous turns (oldest first):\n" + format_history(turns))
+    parts.append(f"Question: {question}")
+    return "\n".join(parts)
 
 
 def format_indicators(rows: list[tuple[str, str]]) -> str:
@@ -171,6 +203,7 @@ def router_log_row(
             period_start=d.period_start.isoformat() if d.period_start else None,
             period_end=d.period_end.isoformat() if d.period_end else None,
             rag_query=d.rag_query,
+            standalone_question=d.standalone_question,
             reason=d.reason,
         )
     return {
@@ -206,11 +239,19 @@ class Router:
         default_factory=lambda: config.LLM_PRICES_USD_PER_MTOK
     )
 
-    def route(self, question: str, today: dt.date | None = None) -> RouterResult:
-        """Route one question (today defaults to the current date) and log it."""
+    def route(
+        self,
+        question: str,
+        today: dt.date | None = None,
+        turns: list[Turn] | tuple[Turn, ...] = (),
+    ) -> RouterResult:
+        """Route one question (today defaults to the current date) and log it.
+
+        turns: earlier (question, short answer) pairs of the session, oldest first.
+        """
         start = time.perf_counter()
         res = RouterResult(run_id=str(uuid.uuid4()), status="error")
-        message = user_message(question, today or dt.date.today())
+        message = user_message(question, today or dt.date.today(), turns)
         try:
             reply = self.llm(build_messages(self.fixed_prompt, message))
             res.input_tokens = reply.input_tokens

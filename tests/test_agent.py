@@ -7,6 +7,7 @@ from vnmacro.agent.agent import (
     Agent,
     RequestLog,
     period_notes,
+    resolved_question,
     retrieval_log_row,
     sql_question,
 )
@@ -27,8 +28,8 @@ class FakeRouter:
     def __init__(self, decision, log):
         self.decision, self.log = decision, log
 
-    def route(self, question, today=None):
-        self.today = today
+    def route(self, question, today=None, turns=()):
+        self.today, self.turns = today, turns
         self.log({"component": "router"})
         return SimpleNamespace(decision=self.decision, cost_usd=0.001, error="boom")
 
@@ -41,16 +42,19 @@ class FakeAnswerer:
         self.calls.append((question, route, notes, sql, chunks))
         self.log({"component": "answer"})
         return SimpleNamespace(
-            text="ANSWER", sources=["s"], error=None, status="ok", cost_usd=0.002
-        )
+            text="ANSWER", sources=["s"], error=None, status="ok", cost_usd=0.002,
+            draft=SimpleNamespace(short_answer="SHORT"),
+        )  # fmt: skip
 
 
-def make(route, time_ref="latest", rag_query=None):
+def make(route, time_ref="latest", rag_query=None, standalone=None):
     rows = []
     log = RequestLog(sink=rows.append)
     decision = None
     if route:
-        decision = RouteDecision(route, time_ref, None, None, "r", rag_query)
+        decision = RouteDecision(
+            route, time_ref, None, None, "r", rag_query, standalone
+        )
     calls = {"retrieve": [], "sql": []}
 
     def retrieve(q, s, e):
@@ -186,3 +190,19 @@ def test_session_id_goes_to_every_log_row():
     assert rows and {r["session_id"] for r in rows} == {"sid"}
     agent.ask_rag_only("Q")
     assert rows[-1]["session_id"] is None  # baseline runs are not app sessions
+
+
+def test_resolved_question():
+    assert resolved_question("Giá FPT?", None) is None
+    assert resolved_question("Giá FPT?", " giá  fpt? ") is None  # same question
+    assert resolved_question("còn VCB?", "Giá VCB?") == "Giá VCB?"
+
+
+def test_follow_up_uses_rewritten_question_in_every_step():
+    agent, _, calls, answerer = make("both", rag_query="CPI?", standalone="Giá VCB?")
+    res = agent.ask("còn VCB?", turns=[("Giá FPT?", "57.900")])
+    assert agent.router.turns == [("Giá FPT?", "57.900")]
+    assert calls["sql"][0].startswith("Giá VCB?\n")
+    assert answerer.calls[0][0] == "Giá VCB?"
+    assert res.standalone_question == "Giá VCB?" and res.short_answer == "SHORT"
+    assert res.question == "còn VCB?"

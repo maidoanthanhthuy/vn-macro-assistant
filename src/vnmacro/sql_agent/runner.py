@@ -18,7 +18,7 @@ LOG_COLUMNS: tuple[str, ...] = (
     "run_id", "component", "question", "model", "prompt_version", "status",
     "final_sql", "attempts", "sql_attempts", "error", "row_count", "latency_ms",
     "input_tokens", "cached_input_tokens", "output_tokens", "cost_usd", "request_id",
-    "session_id",
+    "session_id", "answer_text",
 )  # fmt: skip
 
 

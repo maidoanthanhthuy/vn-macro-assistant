@@ -85,6 +85,10 @@ CREATE INDEX IF NOT EXISTS query_log_session_id_idx ON app.query_log (session_id
 CREATE INDEX IF NOT EXISTS feedback_session_id_idx ON app.feedback (session_id);
 COMMENT ON COLUMN app.query_log.session_id IS
     'Anonymous app session: random uuid4 made when the Streamlit app is opened, not linked to any user data. NULL outside the app (CLI, eval).';
+-- Added after the first user-test round: the answer shown to the user (answer rows).
+ALTER TABLE app.query_log ADD COLUMN IF NOT EXISTS answer_text TEXT;
+COMMENT ON COLUMN app.query_log.answer_text IS
+    'Final Markdown answer shown to the user (answer rows only; the error text when the step failed). Model output, no user data. NULL for other components and rows written before the column existed.';
 COMMENT ON COLUMN app.feedback.session_id IS
     'Anonymous app session of the feedback (same value as app.query_log.session_id); NULL for rows written before the column existed.';
 

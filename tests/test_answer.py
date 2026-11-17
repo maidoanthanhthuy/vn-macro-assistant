@@ -159,6 +159,7 @@ def test_answerer_ok_and_logged():
     assert res.sources[-1] == "Title d (kỳ 2026-10): https://x/d"
     assert logs[0]["component"] == "answer" and logs[0]["status"] == "ok"
     assert logs[0]["sql_attempts"][0]["used_documents"] == [1]
+    assert logs[0]["answer_text"] == res.text
     assert res.cost_usd == pytest.approx((100 * 0.10 + 20 * 0.50) / 1e6)
 
 

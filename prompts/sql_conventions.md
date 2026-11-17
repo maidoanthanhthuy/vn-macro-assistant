@@ -51,6 +51,12 @@ Rules for writing PostgreSQL queries against the database described above.
   latest row; return effective_date so the answer can say since when it applies. Do not
   set cannot_answer because the last change is long before today's date.
 
+## Why-questions
+- A question why a stock or index rose or fell ("tại sao ... tăng", "vì sao ... giảm") is
+  answered with the move itself: return the period's first and last close (with dates)
+  and the % change. The answer step says the reasons are not in the data. Do not set
+  cannot_answer because the data has no reasons; only when the move itself is missing.
+
 ## Symbols
 - Find a stock or index the user names (ticker or name, any letter case) by matching
   both the ticker and the aliases:

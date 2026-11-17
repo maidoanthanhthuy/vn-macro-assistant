@@ -99,6 +99,12 @@ first version is built, evaluated and deployed with the MVP documents above.
    (e.g. past returns). Every refusal, and every answer that says data is missing, ends
    with the app's data scope (symbols, indicators, periods), built from the database.
 
+Follow-up questions ("vậy còn năm 2024?", "diễn biến như nào") are understood from the
+last 2 turns of the same app session: the router rewrites the question to stand alone
+and the later steps use that rewrite. Nothing beyond the session is kept. A question
+why a stock or index moved is answered with the move from the data, plus a note that the
+reasons (news, financial reports) are not in the data.
+
 ## 3. Out of scope
 
 - Investment advice, buy/sell recommendations, price predictions made by the assistant itself

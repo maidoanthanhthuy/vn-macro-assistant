@@ -10,6 +10,7 @@ from vnmacro.app.helpers import (
     feedback_row,
     local_today,
     password_ok,
+    recent_turns,
 )
 
 
@@ -73,3 +74,23 @@ def test_step_labels_cover_agent_steps():
     from vnmacro.agent.agent import STEPS
 
     assert set(STEP_LABELS) == set(STEPS)
+
+
+def test_details_markdown_shows_rewritten_question_first():
+    text = details_markdown("sql", None, None, "Giá VCB?")
+    assert text.splitlines() == [
+        "- **Câu hỏi được hiểu là:** Giá VCB?",
+        "- **Route:** Số liệu (SQL)",
+    ]
+
+
+def test_recent_turns():
+    history = [
+        {"question": "a", "short_answer": "A"},
+        {"question": "b", "short_answer": ""},  # failed answer: skipped
+        {"question": "c", "short_answer": "C"},
+        {"question": "d", "short_answer": "D"},
+    ]
+    assert recent_turns(history, 2) == [("c", "C"), ("d", "D")]
+    assert recent_turns(history, 0) == []
+    assert recent_turns([], 2) == []

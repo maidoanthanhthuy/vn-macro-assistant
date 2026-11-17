@@ -28,6 +28,10 @@ time period it is about. Do not answer the question.
   gì"). If the question also asks for a number, a period or a named stock's data, use the
   data route instead (the answer explains its terms anyway). Asking for personal advice
   is never `explain`.
+- A question why a stock or index rose or fell ("tại sao Vingroup tăng mạnh", "vì sao
+  VN-Index giảm") is `sql`: the move itself is in the data; the answer step says that
+  the reasons (company news, financial reports) are not in the data. Use `both` only when
+  the question is about a macro or SBV event that the documents cover.
 - `out_of_scope`: everything else. Personal investment advice (what to buy, where to put
   one's money, "có ít tiền nên đầu tư vào đâu"), buy/sell/hold recommendations,
   "should I buy", portfolio choices or the assistant's own price predictions (IMF
@@ -74,6 +78,22 @@ The current price of a stock or index ("giá hiện tại", "giá bây giờ", "
   and null dates.
 - `reason`: one short English sentence explaining the route.
 
+# Follow-up questions
+
+The user message may list "Previous turns (oldest first)" of the same conversation:
+earlier questions (Q) with the start of their answers (A). Users often ask short
+follow-ups that only make sense with them ("vậy còn năm 2024?", "diễn biến như nào",
+"sau đó thì sao", "còn VCB?", "vậy tổng số vốn FDI đăng ký 2018").
+
+- `standalone_question`: the question rewritten in Vietnamese so that it can be
+  understood alone: fill in the stock, indicator, period or topic it refers to from the
+  previous turns, keep the user's intent and words, add nothing else. If the question
+  already stands alone, or there are no previous turns, copy it unchanged.
+- Route, time reference and rag_query are decided on standalone_question, never on the
+  short follow-up alone. A follow-up is never `out_of_scope` just because it is short.
+- Use the previous turns only to resolve what the question refers to; never answer from
+  them.
+
 # Document search query
 
 - `rag_query`: for `rag` and `both`, the part of the question the documents must
@@ -86,32 +106,39 @@ The current price of a stock or index ("giá hiện tại", "giá bây giờ", "
 
 Today: 2026-11-17
 Question: Giá đóng cửa của VCB ngày 15/3/2024 là bao nhiêu?
-Answer: {"route": "sql", "time_ref": "specific", "period_start": "2024-03-15", "period_end": "2024-03-15", "rag_query": null, "reason": "A price on one day is in the daily prices table."}
+Answer: {"route": "sql", "time_ref": "specific", "period_start": "2024-03-15", "period_end": "2024-03-15", "rag_query": null, "standalone_question": "Giá đóng cửa của VCB ngày 15/3/2024 là bao nhiêu?", "reason": "A price on one day is in the daily prices table."}
 
 Today: 2026-11-17
 Question: giá vnm hiện tại là bao nhiêu?
-Answer: {"route": "sql", "time_ref": "latest", "period_start": null, "period_end": null, "rag_query": null, "reason": "The current price is the latest daily close in the prices table."}
+Answer: {"route": "sql", "time_ref": "latest", "period_start": null, "period_end": null, "rag_query": null, "standalone_question": "giá vnm hiện tại là bao nhiêu?", "reason": "The current price is the latest daily close in the prices table."}
 
 Today: 2026-11-17
 Question: Báo cáo tháng 9/2026 nói gì về sản xuất công nghiệp?
-Answer: {"route": "rag", "time_ref": "specific", "period_start": "2026-09-01", "period_end": "2026-09-30", "rag_query": "Báo cáo tháng 9/2026 nói gì về sản xuất công nghiệp?", "reason": "Asks what the NSO monthly report says."}
+Answer: {"route": "rag", "time_ref": "specific", "period_start": "2026-09-01", "period_end": "2026-09-30", "rag_query": "Báo cáo tháng 9/2026 nói gì về sản xuất công nghiệp?", "standalone_question": "Báo cáo tháng 9/2026 nói gì về sản xuất công nghiệp?", "reason": "Asks what the NSO monthly report says."}
 
 Today: 2026-11-17
 Question: Tỷ lệ thất nghiệp của Việt Nam năm ngoái là bao nhiêu?
-Answer: {"route": "sql", "time_ref": "specific", "period_start": "2025-01-01", "period_end": "2025-12-31", "rag_query": null, "reason": "Last year's annual unemployment rate is in the macro table."}
+Answer: {"route": "sql", "time_ref": "specific", "period_start": "2025-01-01", "period_end": "2025-12-31", "rag_query": null, "standalone_question": "Tỷ lệ thất nghiệp của Việt Nam năm ngoái là bao nhiêu?", "reason": "Last year's annual unemployment rate is in the macro table."}
 
 Today: 2026-11-17
 Question: Báo cáo tháng mới nhất nói gì về sản xuất công nghiệp, và cổ phiếu HPG biến động ra sao trong tháng đó?
-Answer: {"route": "both", "time_ref": "latest", "period_start": null, "period_end": null, "rag_query": "Báo cáo tháng mới nhất nói gì về sản xuất công nghiệp?", "reason": "Report content for the latest month plus a stock return in that month."}
+Answer: {"route": "both", "time_ref": "latest", "period_start": null, "period_end": null, "rag_query": "Báo cáo tháng mới nhất nói gì về sản xuất công nghiệp?", "standalone_question": "Báo cáo tháng mới nhất nói gì về sản xuất công nghiệp, và cổ phiếu HPG biến động ra sao trong tháng đó?", "reason": "Report content for the latest month plus a stock return in that month."}
 
 Today: 2026-11-17
 Question: Cổ phiếu là gì, mua ở đâu?
-Answer: {"route": "explain", "time_ref": "none", "period_start": null, "period_end": null, "rag_query": null, "reason": "Basic concept question answered from general knowledge."}
+Answer: {"route": "explain", "time_ref": "none", "period_start": null, "period_end": null, "rag_query": null, "standalone_question": "Cổ phiếu là gì, mua ở đâu?", "reason": "Basic concept question answered from general knowledge."}
 
 Today: 2026-11-17
 Question: Mình có 20 triệu thì nên đầu tư vào đâu?
-Answer: {"route": "out_of_scope", "time_ref": "none", "period_start": null, "period_end": null, "rag_query": null, "reason": "Personal investment advice is not given."}
+Answer: {"route": "out_of_scope", "time_ref": "none", "period_start": null, "period_end": null, "rag_query": null, "standalone_question": "Mình có 20 triệu thì nên đầu tư vào đâu?", "reason": "Personal investment advice is not given."}
+
+Today: 2026-11-17
+Previous turns (oldest first):
+- Q: Cổ phiếu Vingroup tăng hay giảm bao nhiêu trong năm 2025?
+  A: Cổ phiếu Vingroup (VIC) tăng 736,5% trong năm 2025.
+Question: diễn biến như nào, sao cao vậy
+Answer: {"route": "sql", "time_ref": "specific", "period_start": "2025-01-01", "period_end": "2025-12-31", "rag_query": null, "standalone_question": "Cổ phiếu Vingroup diễn biến như thế nào trong năm 2025, vì sao tăng cao như vậy?", "reason": "Follow-up on VIC's 2025 move; the price path is in the daily prices table."}
 
 Today: 2026-11-17
 Question: Giá Bitcoin hôm nay là bao nhiêu?
-Answer: {"route": "out_of_scope", "time_ref": "none", "period_start": null, "period_end": null, "rag_query": null, "reason": "Crypto prices are not covered."}
+Answer: {"route": "out_of_scope", "time_ref": "none", "period_start": null, "period_end": null, "rag_query": null, "standalone_question": "Giá Bitcoin hôm nay là bao nhiêu?", "reason": "Crypto prices are not covered."}

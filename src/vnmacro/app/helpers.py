@@ -51,15 +51,29 @@ ROUTE_LABELS: dict[str, str] = {
 
 
 def details_markdown(
-    route: str | None, period: str | None, rag_query: str | None
+    route: str | None,
+    period: str | None,
+    rag_query: str | None,
+    standalone: str | None = None,
 ) -> str:
     """Markdown for the 'Chi tiết' box (the SQL is shown separately as code)."""
-    lines = [f"- **Route:** {ROUTE_LABELS.get(route or '', route or '-')}"]
+    lines = []
+    if standalone:
+        lines.append(f"- **Câu hỏi được hiểu là:** {standalone}")
+    lines.append(f"- **Route:** {ROUTE_LABELS.get(route or '', route or '-')}")
     if period:
         lines.append(f"- **Kỳ dữ liệu:** {period}")
     if rag_query:
         lines.append(f"- **Tìm tài liệu với:** {rag_query}")
     return "\n".join(lines)
+
+
+def recent_turns(
+    history: list[dict[str, Any]], n: int = config.CONTEXT_TURNS
+) -> list[tuple[str, str]]:
+    """Last n answered (question, short answer) pairs of the session, oldest first."""
+    answered = [h for h in history if h.get("short_answer")]
+    return [(h["question"], h["short_answer"]) for h in answered[-n:]] if n > 0 else []
 
 
 STEP_LABELS: dict[str, str] = {

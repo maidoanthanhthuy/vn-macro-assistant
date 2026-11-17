@@ -261,6 +261,7 @@ def answer_log_row(
         "input_tokens": res.input_tokens,
         "cached_input_tokens": res.cached_input_tokens,
         "output_tokens": res.output_tokens, "cost_usd": res.cost_usd,
+        "answer_text": res.text,
     }  # fmt: skip
 
 

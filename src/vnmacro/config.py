@@ -381,6 +381,11 @@ SOURCE_TABLE_LABELS: dict[str, str] = {
     "policy_events": "các lần NHNN đổi lãi suất điều hành (theo thông cáo của NHNN)",
 }
 
+# Follow-up questions: the router sees the last N turns of the app session (question +
+# short answer, cut to this many characters) and rewrites the question to stand alone.
+CONTEXT_TURNS = 2
+CONTEXT_ANSWER_MAX_CHARS = 300
+
 # Route `explain` (general knowledge): note added by code after the explanation, and the
 # lead-in of the suggested lookup question (user-facing, Vietnamese).
 EXPLAIN_NOTE = "_Đây là giải thích chung, không lấy từ dữ liệu của app._"

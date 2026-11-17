@@ -252,7 +252,8 @@ one agent question; NULL when a component runs alone), `created_at`, `component`
 `sql_attempts` (JSON array: each SQL tried and its error), `error`, `row_count`,
 `latency_ms`, `input_tokens`, `cached_input_tokens`, `output_tokens`, `cost_usd`,
 `session_id` (anonymous app session: random uuid4 made when the app is opened and kept
-only in the Streamlit session; no user data; NULL outside the app).
+only in the Streamlit session; no user data; NULL outside the app), `answer_text` (final
+Markdown answer shown to the user, answer rows only).
 CHECKs: a `text_to_sql` row with `ok` needs `final_sql` (router rows have no SQL; their
 decision is the single object in `sql_attempts`), `error` needs `error`, cached tokens <= input tokens,
 counts >= 0, `sql_attempts` is an array.

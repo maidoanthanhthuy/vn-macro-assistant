@@ -33,3 +33,4 @@ q31,"Mua cổ phiếu ở đâu, có bị mất tiền không?",explain,explain,
 q32,Có ít tiền thì nên đầu tư vào đâu?,out_of_scope,none,none,"Personal investment advice (user test): decline, suggest a lookup question, list the data scope (added 2026-11-17)"
 q33,Cổ phiếu VNG tăng giảm thế nào qua từng năm?,numeric,sql,stock_prices,"Symbol not in the database (user test): route sql (not out_of_scope), say VNG is not covered and list the symbols (added 2026-11-17)"
 q34,giá hpg hiện tại là bao nhiêu?,numeric,sql,stock_prices,"Ticker typed in lower case and not in symbols.aliases: match symbols.symbol case-insensitively; latest close of HPG (2026-11-10) (added 2026-11-17)"
+q35,Tại sao cổ phiếu Vingroup tăng mạnh trong năm 2025?,numeric,sql,stock_prices,"Why-question on a stock move (user test): route sql, give VIC's 2025 % change from the data and say the reasons (news, financial reports) are not in the data; no guessed reasons (added 2026-11-17)"

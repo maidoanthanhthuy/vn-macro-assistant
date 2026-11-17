@@ -8,6 +8,7 @@ from vnmacro.agent.router import (
     Router,
     build_fixed_prompt,
     format_documents,
+    format_history,
     format_indicators,
     parse_decision,
     router_log_row,
@@ -27,6 +28,7 @@ def output(**kw):
         "period_start": "2026-06-01",
         "period_end": "2026-06-30",
         "rag_query": "rq",
+        "standalone_question": "sq",
         "reason": "r",
     }
     return json.dumps({**data, **kw})
@@ -77,6 +79,7 @@ def test_rag_query_only_for_document_routes():
         output(extra=1),
         output(reason=None),
         output(rag_query=3),
+        output(standalone_question=None),
     ],
 )
 def test_parse_decision_rejects(content):
@@ -107,7 +110,7 @@ def test_route_ok_logs_decision():
     assert calls[0][-1] == {"role": "user", "content": "Today: 2026-11-17\nQuestion: q"}
     assert res.cost_usd == pytest.approx((20 * 0.10 + 80 * 0.01 + 10 * 0.50) / 1e6)
     row = logs[0]
-    assert set(row) | {"request_id", "session_id"} == set(LOG_COLUMNS)
+    assert set(row) | {"request_id", "session_id", "answer_text"} == set(LOG_COLUMNS)
     assert row["question"] == "q"
     assert row["component"] == "router" and row["final_sql"] is None
     step = row["sql_attempts"][0]
@@ -143,6 +146,21 @@ def test_log_row_without_decision():
 def test_user_message():
     msg = user_message("Năm ngoái?", dt.date(2026, 1, 5))
     assert msg == "Today: 2026-01-05\nQuestion: Năm ngoái?"
+    msg = user_message("vậy còn VCB?", dt.date(2026, 1, 5), [("Giá FPT?", "57.900")])
+    assert msg == (
+        "Today: 2026-01-05\nPrevious turns (oldest first):\n- Q: Giá FPT?\n"
+        "  A: 57.900\nQuestion: vậy còn VCB?"
+    )
+
+
+def test_format_history_cuts_long_answers_and_spaces():
+    text = format_history([("a  b", "x\n y"), ("q", "0123456789")], max_chars=5)
+    assert text.splitlines() == ["- Q: a b", "  A: x y", "- Q: q", "  A: 01234…"]
+
+
+def test_parse_decision_standalone_question():
+    assert parse_decision(output()).standalone_question == "sq"
+    assert parse_decision(output(standalone_question="  ")).standalone_question is None
 
 
 def test_format_indicators():
