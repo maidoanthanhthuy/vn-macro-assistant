@@ -1,5 +1,5 @@
 # Runtime dependencies actually used by the code (versions pinned from the dev .venv).
-# Add new libraries (e.g. pgvector, streamlit) only when the code starts using them.
+# Add a new library only when the code starts using it.
 # Stock and index prices come from the KBS API (fallback: Vietcap) via our own
 # client in src/vnmacro/ingest/, saved as snapshots in data/raw/.
 # Do not add vnstock, vnai or vnstock3: they are quarantined on PyPI.

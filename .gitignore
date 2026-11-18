@@ -24,3 +24,6 @@ mlruns/
 
 # Dev-set evaluation runs (local only)
 eval/runs/
+
+# Editor settings (local only)
+.vscode/
