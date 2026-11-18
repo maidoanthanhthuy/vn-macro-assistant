@@ -170,3 +170,9 @@ CROSS JOIN LATERAL (
     WHERE p.symbol = b.symbol AND p.date <= '2026-10-31' ORDER BY p.date DESC LIMIT 1
 ) e
 ORDER BY b.symbol;
+
+-- q40: GDP forecast for 2031 asked with a judgment part ("có tin được không") -> still
+-- return the IMF WEO row; the answer says the data cannot judge reliability.
+SELECT year, value AS gdp_growth_pct, is_forecast, vintage
+FROM macro_annual
+WHERE indicator_code = 'NGDP_RPCH' AND year = 2031;

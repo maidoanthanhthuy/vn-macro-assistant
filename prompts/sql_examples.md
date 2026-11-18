@@ -108,3 +108,52 @@ WHERE direction = 'cut'
   AND announced_date BETWEEN DATE '2020-01-01' AND DATE '2020-12-31'
 LIMIT 1
 ```
+
+## Example 7: general state of the market (trend + top moves)
+
+Question: Dạo này chứng khoán Việt Nam thế nào rồi?
+
+```sql
+WITH last_day AS (
+    SELECT max(date) AS end_date FROM daily_prices WHERE symbol = 'VNINDEX'
+), periods AS (
+    SELECT '1 week' AS period, end_date - 7 AS ref_date FROM last_day
+    UNION ALL
+    SELECT '1 month', (end_date - INTERVAL '1 month')::date FROM last_day
+    UNION ALL
+    SELECT 'year to date', make_date(extract(year FROM end_date)::int - 1, 12, 31)
+    FROM last_day
+), moves AS (
+    SELECT per.period, s.symbol, s.name, s.asset_type,
+           st.date AS start_date, st.close AS start_close,
+           en.date AS end_date, en.close AS end_close,
+           (en.close / st.close - 1) * 100 AS pct_change
+    FROM periods per
+    CROSS JOIN last_day l
+    CROSS JOIN symbols s
+    CROSS JOIN LATERAL (
+        SELECT date, close FROM daily_prices
+        WHERE symbol = s.symbol AND date <= per.ref_date
+        ORDER BY date DESC LIMIT 1
+    ) st
+    CROSS JOIN LATERAL (
+        SELECT date, close FROM daily_prices
+        WHERE symbol = s.symbol AND date <= l.end_date
+        ORDER BY date DESC LIMIT 1
+    ) en
+    WHERE s.symbol = 'VNINDEX'
+       OR (s.asset_type = 'stock' AND per.period = '1 month')
+), ranked AS (
+    SELECT m.*,
+           rank() OVER (PARTITION BY asset_type ORDER BY pct_change DESC) AS rank_up,
+           rank() OVER (PARTITION BY asset_type ORDER BY pct_change) AS rank_down
+    FROM moves m
+)
+SELECT CASE WHEN asset_type = 'index' THEN 'index'
+            WHEN rank_up <= 3 THEN 'top gainer' ELSE 'top loser' END AS row_type,
+       period, symbol, name, start_date, start_close, end_date, end_close, pct_change
+FROM ranked
+WHERE asset_type = 'index' OR rank_up <= 3 OR rank_down <= 3
+ORDER BY row_type, start_date DESC, pct_change DESC
+LIMIT 20
+```

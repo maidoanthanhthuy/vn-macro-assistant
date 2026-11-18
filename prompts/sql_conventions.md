@@ -45,6 +45,14 @@ Rules for writing PostgreSQL queries against the database described above.
   last trading day on or before the event date + N months (MAX(date) <= event date +
   INTERVAL 'N months'). For a policy_events row the event date is effective_date.
 
+## Market overview
+- A question on the general state of the market ("tình hình thị trường", "thị trường dạo
+  này thế nào") without a named stock or period: from the latest VN-Index date, return
+  VN-Index's % change over 1 week, 1 month and since the start of the year (start =
+  last close on or before the reference day; for the year, the last close of the
+  previous year), plus the 3 stocks with the largest and the 3 with the smallest
+  1-month % change. Label each row (row_type, period). Do not return every stock.
+
 ## Policy rates
 - policy_events lists every SBV policy-rate change since 2020; a rate with no later row
   has not changed. The current ("hiện nay", "hiện tại") rate of a type = new_rate of its
@@ -78,6 +86,14 @@ Rules for writing PostgreSQL queries against the database described above.
 - If the asked month is not in cpi_monthly yet, set cannot_answer = true and give the
   latest month in cpi_monthly in reason; the answer will come from the NSO monthly report
   (documents).
+
+## Partly answerable questions
+- A question often mixes a data part with a part the database cannot answer: a judgment
+  ("có tin được không", "có tốt không", "có giàu không"), a reason, a prediction or a
+  missing indicator. Answer the data part with SQL (cannot_answer = false) and say in
+  notes which part the data cannot answer and why. The answer step explains that part.
+  Example: "Dự báo tăng trưởng năm 2030 có đáng tin không?" -> return the IMF forecast
+  row for 2030; notes: the data cannot judge how reliable the forecast is.
 
 ## Missing data
 - If the data cannot answer the question (topic or indicator not in the database, period

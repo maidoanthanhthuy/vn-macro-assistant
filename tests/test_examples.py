@@ -41,7 +41,7 @@ def test_examples_file_follows_output_rules():
     pairs = examples.parse_examples(
         Path(config.SQL_EXAMPLES_FILE).read_text(encoding="utf-8")
     )
-    assert len(pairs) == 6
+    assert len(pairs) == 7
     for question, sql in pairs:
         assert question
         assert re.match(r"(SELECT|WITH)\b", sql, re.I), question

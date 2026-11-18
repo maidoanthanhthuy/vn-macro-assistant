@@ -316,6 +316,7 @@ EVAL_SQL_KEYS: dict[str, tuple[tuple[str, ...], str]] = {
     "q21": (("gdp_growth_pct", "vintage"), "first"),
     "q22": (("gdp_growth_pct", "vintage"), "first"),
     "q23": (("start_date", "pct_change"), "first"),
+    "q40": (("gdp_growth_pct", "vintage"), "first"),
 }
 
 # Router and period resolver (src/vnmacro/agent/router.py, resolver.py)
@@ -391,6 +392,7 @@ CONTEXT_ANSWER_MAX_CHARS = 300
 EXPLAIN_NOTE = "_Đây là giải thích chung, không lấy từ dữ liệu của app._"
 EXPLAIN_SUGGESTION_LEAD = "Câu hỏi gợi ý"
 ANSWER_TITLES: dict[str, str] = {"explain": "Giải thích", "default": "Trả lời ngắn"}
+EXPLANATION_MAX_TERMS = 3  # "Giải thích thêm": terms kept from the LLM output
 
 # Data scope (src/vnmacro/agent/scope.py): shown on the main screen and appended to
 # refusals. Labels are user-facing (Vietnamese).
@@ -437,5 +439,22 @@ APP_SUGGESTED_QUESTIONS: tuple[str, ...] = (
     "Báo cáo tháng 10/2026 nói gì về xuất khẩu?",
     "Lãi suất tái cấp vốn của Ngân hàng Nhà nước hiện nay là bao nhiêu?",
 )
+# Route `explain`: the suggested lookup question is picked by code from the app's
+# questions: the first topic with a keyword in the question (matched on whole words,
+# lower case, no diacritics), else APP_SUGGESTED_QUESTIONS[0].
+EXPLAIN_SUGGESTION_TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (APP_SUGGESTED_QUESTIONS[1], ("lam phat", "giam phat", "cpi", "gia ca", "vat gia")),
+    (
+        APP_SUGGESTED_QUESTIONS[3],
+        ("lai suat", "ngan hang", "nhnn", "cho vay", "vay von", "tien gui"),
+    ),
+    (
+        APP_SUGGESTED_QUESTIONS[2],
+        ("xuat khau", "nhap khau", "fdi", "gdp", "kinh te", "tang truong", "bao cao"),
+    ),
+)
+# Questions run in worker threads so a feedback click (script rerun) does not stop them.
+APP_QUESTION_WORKERS = 8  # questions answered at the same time, all sessions together
+APP_POLL_SECONDS = 0.3  # how often a waiting page checks its question's progress
 FEEDBACK_RATINGS: tuple[str, ...] = ("up", "down")
 FEEDBACK_MAX_CHARS = 1000  # same limit as the CHECK on app.feedback.comment

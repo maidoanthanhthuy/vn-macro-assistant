@@ -25,19 +25,28 @@ time period it is about. Do not answer the question.
   stock market or the economy, answered from general knowledge without data: what a term
   means ("đầu cơ là gì", "VN-Index là gì"), how something works ("mua cổ phiếu ở đâu",
   "cổ tức là gì", "lãi suất tăng thì sao"), general risks ("đầu tư cổ phiếu có rủi ro
-  gì"). If the question also asks for a number, a period or a named stock's data, use the
-  data route instead (the answer explains its terms anyway). Asking for personal advice
-  is never `explain`.
+  gì"). Also knowledge "why/how" questions ("vì sao", "tại sao", "... là sao", "thế
+  nào"), even about things the data does not hold: "tại sao giá dầu thế giới tăng thì
+  giá xăng trong nước tăng", "vì sao lãi suất tăng thì chứng khoán giảm", "nước ngoài
+  rút 1 tỷ USD khỏi thị trường là sao", "chỉ số Nikkei là gì". A number quoted from the news inside such a question
+  does not make it a data question. If the question asks the app for a number, a period
+  or a named stock's data, use the data route instead (the answer explains its terms
+  anyway). Asking for personal advice is never `explain`.
 - A question why a stock or index rose or fell ("tại sao Vingroup tăng mạnh", "vì sao
   VN-Index giảm") is `sql`: the move itself is in the data; the answer step says that
   the reasons (company news, financial reports) are not in the data. Use `both` only when
   the question is about a macro or SBV event that the documents cover.
-- `out_of_scope`: everything else. Personal investment advice (what to buy, where to put
+- The general state of the stock market ("tình hình thị trường", "thị trường dạo này
+  thế nào", "xu hướng thị trường") is `sql` with time_ref `latest`: the answer uses
+  VN-Index's recent moves and the top stock moves.
+- `out_of_scope`: only two kinds. (1) Personal investment advice (what to buy, where to put
   one's money, "có ít tiền nên đầu tư vào đâu"), buy/sell/hold recommendations,
   "should I buy", portfolio choices or the assistant's own price predictions (IMF
-  forecasts stored in the database are in scope); intraday or real-time prices; company
-  financial statements (revenue, profit, ratios); gold, crypto, commodity or real estate
-  prices; news; any topic unrelated to the Vietnamese market and macroeconomy.
+  forecasts stored in the database are in scope). (2) Requests for data the tools never
+  hold (intraday or real-time prices; company financial statements such as revenue,
+  profit, ratios; gold, crypto, commodity or real estate prices; news) or any topic
+  outside finance and the economy (sports, code, ...). A knowledge question about such
+  a topic (why or how, not "what is the price") is `explain`, not `out_of_scope`.
 
 # Out of scope vs missing data
 
@@ -127,6 +136,14 @@ Answer: {"route": "both", "time_ref": "latest", "period_start": null, "period_en
 Today: 2026-11-17
 Question: Cổ phiếu là gì, mua ở đâu?
 Answer: {"route": "explain", "time_ref": "none", "period_start": null, "period_end": null, "rag_query": null, "standalone_question": "Cổ phiếu là gì, mua ở đâu?", "reason": "Basic concept question answered from general knowledge."}
+
+Today: 2026-11-17
+Question: Vì sao giá nhà đất thường tăng khi lãi suất giảm?
+Answer: {"route": "explain", "time_ref": "none", "period_start": null, "period_end": null, "rag_query": null, "standalone_question": "Vì sao giá nhà đất thường tăng khi lãi suất giảm?", "reason": "General knowledge why-question; real estate data is not needed."}
+
+Today: 2026-11-17
+Question: Thị trường chứng khoán dạo này ra sao?
+Answer: {"route": "sql", "time_ref": "latest", "period_start": null, "period_end": null, "rag_query": null, "standalone_question": "Thị trường chứng khoán dạo này ra sao?", "reason": "Market overview from VN-Index's recent moves and top stock moves."}
 
 Today: 2026-11-17
 Question: Mình có 20 triệu thì nên đầu tư vào đâu?

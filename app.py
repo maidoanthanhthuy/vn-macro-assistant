@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import streamlit as st
@@ -34,6 +36,7 @@ from vnmacro.app.helpers import (  # noqa: E402
     password_ok,
     recent_turns,
 )
+from vnmacro.app.jobs import QuestionJob, start_job  # noqa: E402
 
 load_dotenv()
 os.environ.update(db_target_env(dict(os.environ)))  # DB_TARGET=neon: local run on Neon
@@ -46,6 +49,12 @@ def get_agent():
     from vnmacro.agent.agent import build_agent
 
     return build_agent()
+
+
+@st.cache_resource
+def get_executor() -> ThreadPoolExecutor:
+    """Worker threads that answer questions, shared by all sessions."""
+    return ThreadPoolExecutor(max_workers=config.APP_QUESTION_WORKERS)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -75,25 +84,51 @@ def login() -> bool:
     return False
 
 
-def ask(question: str) -> None:
-    """Run the agent (showing each step) and keep the answer in the session history."""
-    agent = get_agent()
+def start_question(question: str) -> None:
+    """Start the agent on a question in a worker thread; keep the job in the session."""
+    st.session_state["job"] = start_job(
+        get_executor(),
+        get_agent().ask,
+        question,
+        today=local_today(),
+        session_id=st.session_state["session_id"],
+        turns=recent_turns(st.session_state["history"]),
+    )
+
+
+def wait_for(job: QuestionJob) -> None:
+    """Show the job's steps until it ends, then move its answer to the history.
+
+    A rerun during the wait (e.g. a feedback click) stops only this display; the job
+    keeps running and the next run waits for it again.
+    """
+    with st.chat_message("user"):
+        st.markdown(job.question)
     with st.status("Đang xử lý câu hỏi...", expanded=True) as status:
+        shown = 0
+        while True:
+            done = job.done  # read before the steps, so no step is missed
+            for step in job.steps[shown:]:
+                status.write(STEP_LABELS.get(step, step))
+            shown = len(job.steps)
+            if done:
+                break
+            label = STEP_LABELS.get(job.steps[-1], "") if job.steps else ""
+            status.update(label=label or "Đang xử lý câu hỏi...")
+            time.sleep(config.APP_POLL_SECONDS)
+        error = job.future.exception()
+        ok = error is None and job.future.result().status == "ok"
+        label = "Đã xong" if ok else "Có lỗi khi xử lý"
+        status.update(label=label, state="complete", expanded=False)
+    st.session_state["job"] = None
+    if error is None:
+        add_to_history(job.question, job.future.result())
+    else:
+        st.error(config.ANSWER_ERROR_TEXT)
 
-        def on_step(step: str) -> None:
-            label = STEP_LABELS.get(step, step)
-            status.update(label=label)
-            status.write(label)
 
-        res = agent.ask(
-            question,
-            today=local_today(),
-            on_step=on_step,
-            session_id=st.session_state["session_id"],
-            turns=recent_turns(st.session_state["history"]),
-        )
-        done = "Đã xong" if res.status == "ok" else "Có lỗi khi xử lý"
-        status.update(label=done, state="complete", expanded=False)
+def add_to_history(question: str, res) -> None:
+    """Keep an agent result in the session history."""
     period = res.period
     st.session_state["history"].append(
         {
@@ -171,17 +206,24 @@ def main() -> None:
     st.title(config.APP_TITLE)
     st.caption(get_scope_brief() + "  \n" + config.APP_DISCLAIMER)
 
+    job = st.session_state.get("job")
+    busy = job is not None
     pending = None
     if not st.session_state["history"]:
         st.markdown("**Bạn có thể thử:**")
         for i, q in enumerate(config.APP_SUGGESTED_QUESTIONS):
-            if st.button(q, key=f"suggest_{i}"):
+            if st.button(q, key=f"suggest_{i}", disabled=busy):
                 pending = q
     for item in st.session_state["history"]:
         show_answer(item)
-    question = st.chat_input("Nhập câu hỏi về cổ phiếu, chỉ số, kinh tế vĩ mô...")
-    if question or pending:
-        ask(question or pending)
+    question = st.chat_input(
+        "Nhập câu hỏi về cổ phiếu, chỉ số, kinh tế vĩ mô...", disabled=busy
+    )
+    if not busy and (question or pending):
+        start_question(question or pending)
+        job = st.session_state["job"]
+    if job is not None:
+        wait_for(job)
         st.rerun()
 
 

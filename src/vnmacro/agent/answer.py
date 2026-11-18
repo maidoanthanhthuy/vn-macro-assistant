@@ -8,7 +8,9 @@ SQL (config.SOURCE_TABLE_LABELS) and the used documents (title, period, URL).
 from __future__ import annotations
 
 import json
+import re
 import time
+import unicodedata
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -41,14 +43,12 @@ RESPONSE_SCHEMA: dict[str, Any] = {
             },
         },
         "used_documents": {"type": "array", "items": {"type": "integer"}},
-        "suggestion": {"type": ["string", "null"]},
         "declined": {"type": "boolean"},
     },
     "required": [
         "short_answer",
         "explanations",
         "used_documents",
-        "suggestion",
         "declined",
     ],
     "additionalProperties": False,
@@ -74,7 +74,6 @@ class DraftAnswer:
     short_answer: str
     explanations: list[tuple[str, str]]
     used_documents: list[int]
-    suggestion: str | None = None  # route explain: a lookup question the app can answer
     declined: bool = False  # out of scope or data missing: the data scope is appended
 
 
@@ -116,8 +115,10 @@ def format_input(
     return "\n\n".join(parts)
 
 
-def parse_draft(content: str, n_chunks: int) -> DraftAnswer:
-    """Parse the JSON output; drop document numbers that do not exist."""
+def parse_draft(
+    content: str, n_chunks: int, max_terms: int = config.EXPLANATION_MAX_TERMS
+) -> DraftAnswer:
+    """Parse the JSON output; drop missing document numbers and extra terms."""
     try:
         data = json.loads(content)
     except json.JSONDecodeError as e:
@@ -136,16 +137,13 @@ def parse_draft(content: str, n_chunks: int) -> DraftAnswer:
     except (TypeError, KeyError, ValueError) as e:
         raise ValueError(f"Output lists have the wrong shape: {e}") from e
     used = sorted({i for i in used if 1 <= i <= n_chunks})
-    suggestion, declined = data["suggestion"], data["declined"]
-    if suggestion is not None and not isinstance(suggestion, str):
-        raise ValueError("Output field suggestion must be a string or null.")
+    declined = data["declined"]
     if not isinstance(declined, bool):
         raise ValueError("Output field declined must be a boolean.")
     return DraftAnswer(
         short.strip(),
-        [e for e in explanations if all(e)],
+        [e for e in explanations if all(e)][:max_terms],
         used,
-        (suggestion or "").strip() or None,
         declined,
     )
 
@@ -184,17 +182,35 @@ def build_sources(
     return lines
 
 
+def fold_text(text: str) -> str:
+    """Lower case without Vietnamese diacritics ("Lãi suất" -> "lai suat")."""
+    text = unicodedata.normalize("NFD", text.lower().replace("đ", "d"))
+    return "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
+
+
+def pick_suggestion(
+    question: str,
+    topics: tuple[tuple[str, tuple[str, ...]], ...] = config.EXPLAIN_SUGGESTION_TOPICS,
+    default: str = config.APP_SUGGESTED_QUESTIONS[0],
+) -> str:
+    """App question of the first topic with a keyword in the question, else default."""
+    folded = fold_text(question)
+    for suggestion, keywords in topics:
+        if any(re.search(rf"\b{re.escape(k)}\b", folded) for k in keywords):
+            return suggestion
+    return default
+
+
 def answer_footer(
     route: str,
     draft: DraftAnswer,
     scope_text: str,
+    suggestion: str = config.APP_SUGGESTED_QUESTIONS[0],
     explain_note: str = config.EXPLAIN_NOTE,
     suggestion_lead: str = config.EXPLAIN_SUGGESTION_LEAD,
-    default_suggestion: str = config.APP_SUGGESTED_QUESTIONS[0],
 ) -> list[str]:
     """Lines after the answer: explain note + suggestion, or the scope on a refusal."""
     if route == "explain":
-        suggestion = draft.suggestion or default_suggestion
         return [explain_note, f"{suggestion_lead}: “{suggestion}”"]
     if (route == "out_of_scope" or draft.declined) and scope_text:
         return [scope_text]
@@ -228,6 +244,7 @@ class AnswerResult:
     status: str  # 'ok' or 'error'
     text: str = ""
     draft: DraftAnswer | None = None
+    suggestion: str | None = None  # route explain: app question picked by code
     sources: list[str] = field(default_factory=list)
     error: str | None = None
     latency_ms: int = 0
@@ -251,7 +268,7 @@ def answer_log_row(
             used_documents=res.draft.used_documents,
             sources=res.sources,
             declined=res.draft.declined,
-            suggestion=res.draft.suggestion,
+            suggestion=res.suggestion,
         )
     return {
         "run_id": res.run_id, "component": component, "question": question,
@@ -300,7 +317,11 @@ class Answerer:
                 raise ValueError(f"Model refused: {reply.refusal}")
             res.draft = parse_draft(reply.content, len(chunks))
             res.sources = build_sources(sql, chunks, res.draft.used_documents)
-            footer = answer_footer(route, res.draft, self.scope_text)
+            if route == "explain":
+                res.suggestion = pick_suggestion(question)
+            footer = answer_footer(
+                route, res.draft, self.scope_text, res.suggestion or ""
+            )
             title = config.ANSWER_TITLES.get(route, config.ANSWER_TITLES["default"])
             res.text = render(res.draft, res.sources, footer, title)
             res.status = "ok"

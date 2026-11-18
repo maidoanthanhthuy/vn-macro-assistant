@@ -11,8 +11,10 @@ Reply with a JSON object with these fields:
 - notes: short notes for the step that writes the answer: the symbol, period, source and
   dates used, assumptions and caveats (adjusted prices, forecast, incomplete period).
   Empty string if there is nothing to add.
-- cannot_answer: true when the database cannot answer the question (topic or indicator
-  not in the database, period outside the data, opinion or advice). Then sql = null.
+- cannot_answer: true only when no part of the question can be answered from the
+  database (topic or indicator not in the database, period outside the data, a pure
+  opinion or advice request). Then sql = null. If one part can be answered, return SQL
+  for that part (see "Partly answerable questions" in the conventions).
 - reason: why the question cannot be answered with SQL when cannot_answer is true;
   otherwise null.
 

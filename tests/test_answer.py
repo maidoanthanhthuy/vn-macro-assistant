@@ -9,8 +9,10 @@ from vnmacro.agent.answer import (
     SQLData,
     answer_footer,
     build_sources,
+    fold_text,
     format_input,
     parse_draft,
+    pick_suggestion,
     render,
     sql_tables,
 )
@@ -43,7 +45,6 @@ def draft_json(**kw):
             {"term": "giá điều chỉnh", "explanation": "Giá đã điều chỉnh."}
         ],
         "used_documents": [1],
-        "suggestion": None,
         "declined": False,
     }
     return json.dumps({**data, **kw})
@@ -79,28 +80,44 @@ def test_parse_draft_filters_document_numbers():
     "content",
     ["nope", draft_json(short_answer=" "), json.dumps({"short_answer": "x"}),
      draft_json(explanations=[{"term": "a"}]), draft_json(extra=1),
-     draft_json(declined="yes"), draft_json(suggestion=3)],
+     draft_json(declined="yes"), draft_json(suggestion="Q?")],
 )  # fmt: skip
 def test_parse_draft_rejects(content):
     with pytest.raises(ValueError):
         parse_draft(content, 1)
 
 
-def test_parse_draft_reads_suggestion_and_declined():
-    d = parse_draft(draft_json(suggestion="  Q?  ", declined=True), 1)
-    assert (d.suggestion, d.declined) == ("Q?", True)
-    assert parse_draft(draft_json(suggestion=" "), 1).suggestion is None
+def test_parse_draft_reads_declined_and_caps_terms():
+    assert parse_draft(draft_json(declined=True), 1).declined is True
+    terms = [{"term": f"t{i}", "explanation": "e"} for i in range(5)]
+    d = parse_draft(draft_json(explanations=terms), 1, max_terms=3)
+    assert [t for t, _ in d.explanations] == ["t0", "t1", "t2"]
+
+
+def test_fold_text():
+    assert fold_text("Lãi suất ĐIỀU hành") == "lai suat dieu hanh"
+
+
+TOPICS = (
+    ("Q lạm phát?", ("lam phat", "cpi")),
+    ("Q lãi suất?", ("lai suat", "cho vay")),
+)
+
+
+@pytest.mark.parametrize(
+    "question, expected",
+    [("Lạm phát là gì?", "Q lạm phát?"), ("lai suat tang thi sao", "Q lãi suất?"),
+     ("CPI và lãi suất", "Q lạm phát?"), ("vậy đầu cơ là gì", "D?"),
+     ("S&P 500 là gì?", "D?"), ("cpix", "D?")],
+)  # fmt: skip
+def test_pick_suggestion(question, expected):
+    assert pick_suggestion(question, TOPICS, "D?") == expected
 
 
 def test_answer_footer():
-    draft = DraftAnswer("x", [], [], suggestion="VN-Index 2025?")
-    assert answer_footer("explain", draft, "SCOPE", "NOTE", "Thử") == [
+    draft = DraftAnswer("x", [], [])
+    assert answer_footer("explain", draft, "SCOPE", "D?", "NOTE", "Thử") == [
         "NOTE",
-        "Thử: “VN-Index 2025?”",
-    ]
-    no_suggestion = DraftAnswer("x", [], [])
-    assert answer_footer("explain", no_suggestion, "S", "N", "Thử", "D?") == [
-        "N",
         "Thử: “D?”",
     ]
     assert answer_footer("out_of_scope", DraftAnswer("x", [], []), "SCOPE") == ["SCOPE"]
@@ -171,12 +188,12 @@ def test_answerer_error_gives_fallback_text():
 
 
 def test_answerer_explain_adds_note_and_suggestion():
-    reply = draft_json(used_documents=[], suggestion="Q2?")
-    a, logs = make(LLMResponse(reply, 10, 0, 5))
-    res = a.answer("Đầu cơ là gì?", "explain", [], None, [])
-    assert res.text.startswith("**Giải thích**")
-    assert "Q2?" in res.text and "SCOPE" not in res.text
-    assert logs[0]["sql_attempts"][0]["suggestion"] == "Q2?"
+    a, logs = make(LLMResponse(draft_json(used_documents=[]), 10, 0, 5))
+    res = a.answer("Lãi suất tăng thì sao?", "explain", [], None, [])
+    expected = pick_suggestion("Lãi suất tăng thì sao?")
+    assert res.text.startswith("**Giải thích**") and res.suggestion == expected
+    assert expected in res.text and "SCOPE" not in res.text
+    assert logs[0]["sql_attempts"][0]["suggestion"] == expected
 
 
 def test_answerer_declined_appends_scope():
