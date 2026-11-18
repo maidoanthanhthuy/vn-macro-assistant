@@ -46,8 +46,9 @@ flowchart LR
 - **Answer writer**: short answer with the numbers, up to 3 terms explained for
   beginners, sources built by code (tables used, document titles and links). Refusals
   and missing data come with the list of data the app holds.
-- Stack: Python 3.11, PostgreSQL 16 + pgvector, OpenAI API (chat + embeddings),
-  Streamlit, Neon (deployed database), GitHub Actions (ruff + pytest).
+- Stack: Python 3.11, PostgreSQL + pgvector (16 locally in Docker, 18 on Neon for the
+  deployed app), OpenAI API (`gpt-6-luna` for the router, Text-to-SQL and answers;
+  `text-embedding-3-large` for embeddings), Streamlit, GitHub Actions (ruff + pytest).
 
 ## Data
 
