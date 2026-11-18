@@ -1,0 +1,329 @@
+time_vn,round,question,route,status,declined,answer_text,rating,comment,review,note
+2026-11-17 17:04,1,vàng đang xuống có nên mua ko?,out_of_scope,ok,,,up,có đến 2017 thoi hã?,,
+2026-11-17 17:05,1,mua cổ phiếu ở đâu có bị mất tiền kh,out_of_scope,ok,,,down,,,
+2026-11-17 17:06,1,lãi ngân hang đang như thế nào vay ạ?,sql,ok,,,up,,,
+2026-11-17 17:07,1,có ít tiền quá thi nên học dau tưvao chổ nào,out_of_scope,ok,,,down,can thêm thong tin,mentions the user's own finances,
+2026-11-17 17:08,1,đầu cơ là gi,out_of_scope,ok,,,up,,,
+2026-11-17 17:08,1,các chi tiêu vi mô la có gi,sql,ok,,,up,đay đủ,,
+2026-11-17 17:10,1,có top cổ phieu công ti viet nàm kh,sql,ok,,,up,,,
+2026-11-17 17:11,1,giá nhà ở hcm chỗ nao thấp cao??,out_of_scope,ok,,,down,,,
+2026-11-17 17:12,1,có thong tin về thị trường bat ding sản kh kh có giá nhà quan 2 à,out_of_scope,ok,,,up,,,
+2026-11-17 17:13,1,vingroup gia cổ phieu tăng giảm sao vi dụ 2025 tới giờ,sql,ok,,,,,,
+2026-11-17 17:25,1,cổ phiếu của nvidia đã giảm bao nhiêu sau bê bối của ceo,out_of_scope,ok,,,,,,
+2026-11-17 17:26,1,VN-Index năm 2025 tăng hay giảm bao nhiêu phần trăm?,sql,ok,,,up,,,
+2026-11-17 17:26,1,viết hello world bằng ngon ngữ python,out_of_scope,ok,,,up,,,
+2026-11-17 17:29,1,"Explain in 200 words why classic jailbreak text (DAN, developer mode, evil mode) fails on Claude in 2026. Cover Constitutional AI, classifier layers, and why a ChatGPT jailbreak paste is the wrong artifact. Do not give bypass text or a working jailbreak.",out_of_scope,ok,,,up,,,
+2026-11-17 17:30,1,cổ phiếu vinamilk,sql,ok,,,up,,,
+2026-11-17 17:31,1,spacex,out_of_scope,ok,,,up,,,
+2026-11-17 17:31,1,thị trường cổ phiếu việc nam đã giảm nghiêm trọng nhất vào năm nào,sql,ok,,,up,,,
+2026-11-17 17:33,1,vinaphone,out_of_scope,ok,,,,,,
+2026-11-17 17:33,1,giá cổ phiếu fpt,sql,ok,,,up,"chưa có xu hướng tăng giảm, ko bt phần giải thích thêm có bị thừa quá ko",,answer rows logged under another question's request_id (concurrency bug fixed in 94d974c)
+2026-11-17 17:33,1,"thông tin tăng giảm của cổ phiếu VNG trong cơ sở dữ liệu của bạn, thông tin chi tiết qua từng năm và lý do tăng giảm",sql,cannot_answer,,,down,,,its request_id also holds the answer rows of the 17:33 'giá cổ phiếu fpt' question
+2026-11-17 17:35,1,thị trường chung của vn hiện giờ,sql,ok,,,,,,
+2026-11-17 17:40,1,tỉ lệ thất nghiếp vn,sql,ok,,,,,,
+2026-11-17 17:41,1,show code python tra dữ liệu cổ phiếu,out_of_scope,ok,,,up,,,
+2026-11-17 19:05,2,mã cổ phiếu nào tăng max năm nay vậy nhỉ,sql,ok,false,,up,,,
+2026-11-17 19:07,2,tièn tệ nào có giá trị nhất the giới??? đổi ra tiền việt nhiều là giá trị có phải không,out_of_scope,ok,true,,up,ồ,,
+2026-11-17 19:08,2,vậy giá cổ phiếu ngân hàng nào ổn nhất,sql,cannot_answer,true,,,,,
+2026-11-17 19:11,2,vậy từ 2017 tới giờ lạm phát dữ lắm không,sql,ok,false,,up,cám mơn,,
+2026-11-17 19:13,2,"gdp việt nam tăng nhanh lắm à? sao cuộc sống vẫn khó khắn, lương kh tăng",both,ok,true,,up,chi tiết cám ơn,mentions the user's own living situation,
+2026-11-17 19:15,2,tại sao vingroup tăng nhanh vậy ý la fgiá cổ phiếu,out_of_scope,ok,true,,,,,
+2026-11-17 19:15,2,diễn biến như nào,out_of_scope,ok,true,,down,mới hỏi ở trên mà,,
+2026-11-17 19:16,2,diễn biến cổ phiếu vingroup,sql,ok,false,,,,,
+2026-11-17 19:17,2,diễn biến vingroup vài năm gần đây nữa,sql,ok,false,,up,ồ khủng khiếp,,
+2026-11-17 19:18,2,"sau đó tăng 736,5% năm 2025 nói cụ thể vingroup sao cao quá vậy",out_of_scope,ok,true,,down,phạm vị gì hẹp vậy,,
+2026-11-17 19:20,2,vốn fdi năm 2018 covid có ít không,sql,ok,false,,up,,,
+2026-11-17 19:22,2,vậy  tổng số vốn FDI đăng ký 2018,sql,no_answer,,,,,,no answer: a feedback click at the same second re-ran the Streamlit script
+2026-11-17 19:22,2,Lạm phát tháng gần nhất là bao nhiêu?,rag,ok,false,,up,,,
+2026-11-17 19:22,2,tổng số vốn FDI đăng ký 2018,sql,cannot_answer,true,,,,,
+2026-11-17 19:36,2,cổ phiếu vng,sql,cannot_answer,true,,,,,
+2026-11-17 19:36,2,cổ phiếu fpt,sql,ok,false,,,,,
+2026-11-17 19:37,2,xu hướng thị trường vn,sql,ok,false,,,,,
+2026-11-17 19:38,2,Lạm phát tháng gần nhất là bao nhiêu?,rag,ok,false,,,,,
+2026-11-17 19:39,2,cổ phiếu fpt,sql,ok,false,,,,,
+2026-11-17 19:39,2,tỉ lê thất nghiệp,sql,ok,false,,,,,
+2026-11-17 20:31,2,cpi thang 10 2023 va vn index la nhieu,sql,ok,false,"**Trả lời ngắn**
+Tháng 10/2023, chỉ số CPI là 97,54 (gốc 2024 = 100), lạm phát so với cùng kỳ là 3,59%. VN-Index đóng cửa ở mức 1.028,19 điểm ngày 31/10/2023.
+
+**Giải thích thêm**
+- **CPI**: CPI là chỉ số giá tiêu dùng, dùng để theo dõi mức giá của một nhóm hàng hóa và dịch vụ tiêu biểu.
+- **lạm phát so với cùng kỳ**: Đây là mức tăng giá so với cùng tháng của năm trước.
+- **VN-Index**: VN-Index phản ánh biến động giá cổ phiếu trên sàn HOSE.
+
+**Nguồn**
+- Bảng `cpi_monthly`: chỉ số giá tiêu dùng (CPI) hằng tháng, nguồn IMF
+- Bảng `daily_prices`: giá đóng cửa và khối lượng hằng ngày (giá điều chỉnh), nguồn KBS",,,,
+2026-11-17 20:32,2,nam do bien động nào lớn nhất,sql,ok,false,"**Trả lời ngắn**
+Trong giai đoạn tháng 12/2022 đến tháng 12/2023, CPI tăng 3,58%, còn VN-Index tăng 12,2% từ ngày giao dịch cuối cùng trước năm 2023 đến ngày giao dịch cuối cùng của năm. Vì vậy, xét theo mức thay đổi tỷ lệ, VN-Index biến động lớn hơn.
+
+**Giải thích thêm**
+- **CPI**: CPI là chỉ số giá tiêu dùng, dùng để theo dõi mức thay đổi giá của một giỏ hàng hóa và dịch vụ.
+- **VN-Index**: VN-Index là chỉ số phản ánh biến động giá cổ phiếu trên Sở Giao dịch Chứng khoán TP.HCM.
+
+**Nguồn**
+- Bảng `cpi_monthly`: chỉ số giá tiêu dùng (CPI) hằng tháng, nguồn IMF
+- Bảng `daily_prices`: giá đóng cửa và khối lượng hằng ngày (giá điều chỉnh), nguồn KBS",up,,,
+2026-11-17 20:33,2,năm nay co bao nhiu doanh nghiep mở và đóng tháng 10,rag,ok,false,"**Trả lời ngắn**
+Trong tháng 10/2026, có gần 12,6 nghìn doanh nghiệp thành lập mới và 7.513 doanh nghiệp hoàn tất thủ tục giải thể. Ngoài ra, 4.726 doanh nghiệp đăng ký tạm ngừng kinh doanh có thời hạn và 8.032 doanh nghiệp ngừng hoạt động để chờ làm thủ tục giải thể.
+
+**Giải thích thêm**
+- **doanh nghiệp thành lập mới**: Là doanh nghiệp vừa đăng ký thành lập và bắt đầu tham gia hoạt động kinh doanh.
+- **hoàn tất thủ tục giải thể**: Là doanh nghiệp đã hoàn thành các thủ tục pháp lý để chấm dứt hoạt động.
+- **đăng ký tạm ngừng kinh doanh có thời hạn**: Là doanh nghiệp đăng ký tạm dừng hoạt động trong một khoảng thời gian.
+- **ngừng hoạt động chờ làm thủ tục giải thể**: Là doanh nghiệp đã dừng hoạt động nhưng chưa hoàn thành thủ tục chấm dứt pháp lý.
+
+**Nguồn**
+- Báo cáo tình hình kinh tế – xã hội tháng Mười và 10 tháng năm 2026 (kỳ 2026-10): https://www.nso.gov.vn/bai-top/2026/11/bao-cao-tinh-hinh-kinh-te-xa-hoi-thang-muoi-va-10-thang-nam-2026/",up,,,
+2026-11-17 20:35,2,lương tring bình,rag,ok,true,"**Trả lời ngắn**
+Báo cáo tháng 10/2026 không nêu mức lương trung bình, nên mình không có số liệu để trả lời con số này.
+
+**Giải thích thêm**
+- **Lương trung bình**: Đây là mức lương bình quân của một nhóm người trong một khoảng thời gian xác định.
+
+**Dữ liệu mình tra cứu được**
+- Giá cổ phiếu (giá đóng cửa điều chỉnh, khối lượng hằng ngày) từ 05/01/2015 đến 10/11/2026; mã niêm yết sau thì từ ngày niêm yết: BID (BIDV), CTG (VietinBank), FPT (FPT), GAS (PV GAS), HPG (Hòa Phát), MBB (MB), MSN (Masan), MWG (Thế Giới Di Động), SSI (SSI), TCB (Techcombank), VCB (Vietcombank), VHM (Vinhomes), VIC (Vingroup), VNM (Vinamilk), VPB (VPBank).
+- Chỉ số: VN-Index, VN30, HNX-Index (cùng khoảng thời gian).
+- Chỉ tiêu vĩ mô hằng năm của Việt Nam, 2000–2025 (tùy chỉ tiêu), có dự báo tăng trưởng GDP của IMF đến 2031: Lãi suất cho vay; Lạm phát theo giá tiêu dùng; Tăng trưởng GDP; Tăng trưởng GDP thực; Tăng trưởng tiền rộng; Tỷ giá hối đoái chính thức; Tỷ lệ thất nghiệp; Xuất khẩu hàng hóa và dịch vụ; Đầu tư trực tiếp nước ngoài, vốn vào ròng.
+- CPI và lạm phát so với cùng kỳ hằng tháng: 12/2001 – 09/2026.
+- Các lần Ngân hàng Nhà nước đổi lãi suất điều hành: 16/03/2020 – 16/06/2023.
+- Tài liệu: báo cáo kinh tế - xã hội hằng tháng của Cục Thống kê, 11/2025 – 10/2026 (12 tài liệu).
+- Tài liệu: chỉ thị điều hành năm của Ngân hàng Nhà nước, 2026 (1 tài liệu).
+- Tài liệu: họp báo quý của Ngân hàng Nhà nước, Q4/2025 – Q3/2026 (4 tài liệu).",down,,,
+2026-11-17 20:36,2,cổ phiêu trái phiêu là khác sao còn tăng tiền rộng al gi,explain,ok,false,"**Giải thích**
+Cổ phiếu là phần sở hữu trong doanh nghiệp, nên người nắm giữ có thể hưởng lợi khi doanh nghiệp phát triển nhưng cũng chịu rủi ro khi giá trị doanh nghiệp giảm. Trái phiếu là khoản cho doanh nghiệp hoặc chính phủ vay; bên phát hành thường trả lãi và hoàn vốn theo điều kiện đã cam kết. Tăng trưởng tiền rộng là mức tăng của tổng lượng tiền mặt và tiền gửi cùng các tài sản gần như tiền trong nền kinh tế qua một thời kỳ.
+
+_Đây là giải thích chung, không lấy từ dữ liệu của app._
+
+Câu hỏi gợi ý: “Tăng trưởng tiền rộng của Việt Nam năm gần nhất là bao nhiêu?”",,,,
+2026-11-17 20:37,2,giảm phát vn có không,rag,ok,false,"**Trả lời ngắn**
+Theo báo cáo tháng 10/2026, chưa thấy giảm phát: CPI bình quân 10 tháng đầu năm 2026 tăng 4,57% so với cùng kỳ năm 2025. Lạm phát cơ bản tháng 10 giảm 0,05% so với tháng trước nhưng vẫn tăng 4,04% so với cùng kỳ năm trước.
+
+**Giải thích thêm**
+- **giảm phát**: Giảm phát là tình trạng mức giá chung của hàng hóa và dịch vụ giảm trong một thời gian.
+- **CPI**: CPI là chỉ số đo mức thay đổi giá của một nhóm hàng hóa và dịch vụ tiêu dùng phổ biến.
+- **so với cùng kỳ**: Cụm này so sánh một khoảng thời gian với đúng khoảng thời gian tương ứng của năm trước.
+- **lạm phát cơ bản**: Lạm phát cơ bản đo xu hướng giá bằng cách loại trừ một số nhóm giá biến động mạnh hoặc chịu tác động đặc thù.
+
+**Nguồn**
+- Báo cáo tình hình kinh tế – xã hội tháng Mười và 10 tháng năm 2026 (kỳ 2026-10): https://www.nso.gov.vn/bai-top/2026/11/bao-cao-tinh-hinh-kinh-te-xa-hoi-thang-muoi-va-10-thang-nam-2026/",,,,
+2026-11-17 20:38,2,dự báo tuong lai có gì,sql,cannot_answer,true,"**Trả lời ngắn**
+Mình chưa có dữ liệu dự báo lạm phát hoặc giảm phát ở Việt Nam trong tương lai; dữ liệu lạm phát hằng tháng chỉ đến tháng 9/2026 và chuỗi hằng năm chỉ đến năm 2025.
+
+**Giải thích thêm**
+- **lạm phát**: Lạm phát là tình trạng mặt bằng giá hàng hóa và dịch vụ tăng theo thời gian.
+- **giảm phát**: Giảm phát là tình trạng mặt bằng giá hàng hóa và dịch vụ giảm theo thời gian.
+
+**Dữ liệu mình tra cứu được**
+- Giá cổ phiếu (giá đóng cửa điều chỉnh, khối lượng hằng ngày) từ 05/01/2015 đến 10/11/2026; mã niêm yết sau thì từ ngày niêm yết: BID (BIDV), CTG (VietinBank), FPT (FPT), GAS (PV GAS), HPG (Hòa Phát), MBB (MB), MSN (Masan), MWG (Thế Giới Di Động), SSI (SSI), TCB (Techcombank), VCB (Vietcombank), VHM (Vinhomes), VIC (Vingroup), VNM (Vinamilk), VPB (VPBank).
+- Chỉ số: VN-Index, VN30, HNX-Index (cùng khoảng thời gian).
+- Chỉ tiêu vĩ mô hằng năm của Việt Nam, 2000–2025 (tùy chỉ tiêu), có dự báo tăng trưởng GDP của IMF đến 2031: Lãi suất cho vay; Lạm phát theo giá tiêu dùng; Tăng trưởng GDP; Tăng trưởng GDP thực; Tăng trưởng tiền rộng; Tỷ giá hối đoái chính thức; Tỷ lệ thất nghiệp; Xuất khẩu hàng hóa và dịch vụ; Đầu tư trực tiếp nước ngoài, vốn vào ròng.
+- CPI và lạm phát so với cùng kỳ hằng tháng: 12/2001 – 09/2026.
+- Các lần Ngân hàng Nhà nước đổi lãi suất điều hành: 16/03/2020 – 16/06/2023.
+- Tài liệu: báo cáo kinh tế - xã hội hằng tháng của Cục Thống kê, 11/2025 – 10/2026 (12 tài liệu).
+- Tài liệu: chỉ thị điều hành năm của Ngân hàng Nhà nước, 2026 (1 tài liệu).
+- Tài liệu: họp báo quý của Ngân hàng Nhà nước, Q4/2025 – Q3/2026 (4 tài liệu).",,,,
+2026-11-17 20:38,2,có thông tin ve ai khong?,out_of_scope,ok,true,"**Trả lời ngắn**
+Mình chưa có thông tin về AI. Mình có thể tra cứu giá cổ phiếu FPT; chẳng hạn: “Giá cổ phiếu FPT gần đây biến động thế nào?”
+
+**Giải thích thêm**
+- **Giá cổ phiếu**: Là mức giá mà cổ phiếu được giao dịch trên thị trường.
+
+**Dữ liệu mình tra cứu được**
+- Giá cổ phiếu (giá đóng cửa điều chỉnh, khối lượng hằng ngày) từ 05/01/2015 đến 10/11/2026; mã niêm yết sau thì từ ngày niêm yết: BID (BIDV), CTG (VietinBank), FPT (FPT), GAS (PV GAS), HPG (Hòa Phát), MBB (MB), MSN (Masan), MWG (Thế Giới Di Động), SSI (SSI), TCB (Techcombank), VCB (Vietcombank), VHM (Vinhomes), VIC (Vingroup), VNM (Vinamilk), VPB (VPBank).
+- Chỉ số: VN-Index, VN30, HNX-Index (cùng khoảng thời gian).
+- Chỉ tiêu vĩ mô hằng năm của Việt Nam, 2000–2025 (tùy chỉ tiêu), có dự báo tăng trưởng GDP của IMF đến 2031: Lãi suất cho vay; Lạm phát theo giá tiêu dùng; Tăng trưởng GDP; Tăng trưởng GDP thực; Tăng trưởng tiền rộng; Tỷ giá hối đoái chính thức; Tỷ lệ thất nghiệp; Xuất khẩu hàng hóa và dịch vụ; Đầu tư trực tiếp nước ngoài, vốn vào ròng.
+- CPI và lạm phát so với cùng kỳ hằng tháng: 12/2001 – 09/2026.
+- Các lần Ngân hàng Nhà nước đổi lãi suất điều hành: 16/03/2020 – 16/06/2023.
+- Tài liệu: báo cáo kinh tế - xã hội hằng tháng của Cục Thống kê, 11/2025 – 10/2026 (12 tài liệu).
+- Tài liệu: chỉ thị điều hành năm của Ngân hàng Nhà nước, 2026 (1 tài liệu).
+- Tài liệu: họp báo quý của Ngân hàng Nhà nước, Q4/2025 – Q3/2026 (4 tài liệu).",down,,,
+2026-11-17 20:39,2,dự báo gpd 2031 có tin duoc kh vn có giàu kh,sql,cannot_answer,true,"**Trả lời ngắn**
+Mình chưa thể đánh giá độ tin cậy của dự báo GDP năm 2031 vì kết quả tra cứu không cung cấp con số dự báo hay cơ sở để đánh giá. Dữ liệu cũng không có GDP bình quân đầu người hoặc phân loại mức thu nhập để kết luận Việt Nam có giàu hay không.
+
+**Giải thích thêm**
+- **GDP**: GDP là tổng giá trị hàng hóa và dịch vụ cuối cùng được tạo ra trong một nền kinh tế trong một khoảng thời gian.
+- **dự báo**: Dự báo là ước tính về một kết quả có thể xảy ra trong tương lai.
+- **GDP bình quân đầu người**: GDP bình quân đầu người là GDP chia cho dân số, thường dùng để tham khảo mức thu nhập trung bình của một người.
+- **phân loại mức thu nhập**: Phân loại mức thu nhập là cách xếp một nền kinh tế vào nhóm thu nhập dựa trên một tiêu chí nhất định.
+
+**Dữ liệu mình tra cứu được**
+- Giá cổ phiếu (giá đóng cửa điều chỉnh, khối lượng hằng ngày) từ 05/01/2015 đến 10/11/2026; mã niêm yết sau thì từ ngày niêm yết: BID (BIDV), CTG (VietinBank), FPT (FPT), GAS (PV GAS), HPG (Hòa Phát), MBB (MB), MSN (Masan), MWG (Thế Giới Di Động), SSI (SSI), TCB (Techcombank), VCB (Vietcombank), VHM (Vinhomes), VIC (Vingroup), VNM (Vinamilk), VPB (VPBank).
+- Chỉ số: VN-Index, VN30, HNX-Index (cùng khoảng thời gian).
+- Chỉ tiêu vĩ mô hằng năm của Việt Nam, 2000–2025 (tùy chỉ tiêu), có dự báo tăng trưởng GDP của IMF đến 2031: Lãi suất cho vay; Lạm phát theo giá tiêu dùng; Tăng trưởng GDP; Tăng trưởng GDP thực; Tăng trưởng tiền rộng; Tỷ giá hối đoái chính thức; Tỷ lệ thất nghiệp; Xuất khẩu hàng hóa và dịch vụ; Đầu tư trực tiếp nước ngoài, vốn vào ròng.
+- CPI và lạm phát so với cùng kỳ hằng tháng: 12/2001 – 09/2026.
+- Các lần Ngân hàng Nhà nước đổi lãi suất điều hành: 16/03/2020 – 16/06/2023.
+- Tài liệu: báo cáo kinh tế - xã hội hằng tháng của Cục Thống kê, 11/2025 – 10/2026 (12 tài liệu).
+- Tài liệu: chỉ thị điều hành năm của Ngân hàng Nhà nước, 2026 (1 tài liệu).
+- Tài liệu: họp báo quý của Ngân hàng Nhà nước, Q4/2025 – Q3/2026 (4 tài liệu).",,,,
+2026-11-17 20:40,2,số liẹu khong có à,sql,ok,true,"**Trả lời ngắn**
+Có: dự báo của IMF trong WEO tháng 10/2026 cho tăng trưởng GDP thực năm 2031 là 5,7%. Không có dữ liệu GDP bình quân đầu người hoặc mức thu nhập để đánh giá Việt Nam có giàu hay không.
+
+**Giải thích thêm**
+- **dự báo của IMF**: Đây là ước tính về tương lai do Quỹ Tiền tệ Quốc tế đưa ra, không phải số liệu thực tế đã xảy ra.
+- **WEO**: WEO là báo cáo Triển vọng Kinh tế Thế giới của Quỹ Tiền tệ Quốc tế.
+- **tăng trưởng GDP thực**: Đây là mức thay đổi của tổng giá trị hàng hóa và dịch vụ được tạo ra trong nền kinh tế sau khi loại ảnh hưởng của biến động giá.
+- **GDP bình quân đầu người**: Đây là GDP chia cho dân số, thường được dùng để tham khảo mức thu nhập và mức sống trung bình.
+
+**Nguồn**
+- Bảng `macro_annual`: chỉ tiêu vĩ mô hằng năm: World Bank (số thực tế) và IMF WEO (tăng trưởng GDP, gồm dự báo)
+
+**Dữ liệu mình tra cứu được**
+- Giá cổ phiếu (giá đóng cửa điều chỉnh, khối lượng hằng ngày) từ 05/01/2015 đến 10/11/2026; mã niêm yết sau thì từ ngày niêm yết: BID (BIDV), CTG (VietinBank), FPT (FPT), GAS (PV GAS), HPG (Hòa Phát), MBB (MB), MSN (Masan), MWG (Thế Giới Di Động), SSI (SSI), TCB (Techcombank), VCB (Vietcombank), VHM (Vinhomes), VIC (Vingroup), VNM (Vinamilk), VPB (VPBank).
+- Chỉ số: VN-Index, VN30, HNX-Index (cùng khoảng thời gian).
+- Chỉ tiêu vĩ mô hằng năm của Việt Nam, 2000–2025 (tùy chỉ tiêu), có dự báo tăng trưởng GDP của IMF đến 2031: Lãi suất cho vay; Lạm phát theo giá tiêu dùng; Tăng trưởng GDP; Tăng trưởng GDP thực; Tăng trưởng tiền rộng; Tỷ giá hối đoái chính thức; Tỷ lệ thất nghiệp; Xuất khẩu hàng hóa và dịch vụ; Đầu tư trực tiếp nước ngoài, vốn vào ròng.
+- CPI và lạm phát so với cùng kỳ hằng tháng: 12/2001 – 09/2026.
+- Các lần Ngân hàng Nhà nước đổi lãi suất điều hành: 16/03/2020 – 16/06/2023.
+- Tài liệu: báo cáo kinh tế - xã hội hằng tháng của Cục Thống kê, 11/2025 – 10/2026 (12 tài liệu).
+- Tài liệu: chỉ thị điều hành năm của Ngân hàng Nhà nước, 2026 (1 tài liệu).
+- Tài liệu: họp báo quý của Ngân hàng Nhà nước, Q4/2025 – Q3/2026 (4 tài liệu).",,,,
+2026-11-17 20:41,2,cho tôi xem cố phêí nào bán dược nhieu nất năm nay,sql,ok,false,"**Trả lời ngắn**
+Từ 05/01 đến 10/11/2026, cổ phiếu HPG (Hòa Phát) có khối lượng giao dịch lớn nhất, với 6.208.286.900 cổ phiếu. Đây là dữ liệu năm 2026 tính đến ngày giao dịch gần nhất hiện có, chưa phải tổng kết cả năm.
+
+**Giải thích thêm**
+- **cổ phiếu**: Cổ phiếu là giấy tờ xác nhận quyền sở hữu một phần của doanh nghiệp.
+- **khối lượng giao dịch**: Khối lượng giao dịch là tổng số cổ phiếu đã được mua bán trong khoảng thời gian được nêu.
+
+**Nguồn**
+- Bảng `daily_prices`: giá đóng cửa và khối lượng hằng ngày (giá điều chỉnh), nguồn KBS",,,,
+2026-11-17 20:41,2,Báo cáo tháng 10/2026 nói gì về xuất khẩu?,rag,ok,false,"**Trả lời ngắn**
+Báo cáo tháng 10/2026 cho biết kim ngạch xuất khẩu hàng hóa trong tháng Mười đạt 64,67 tỷ USD, tăng 8,7% so với tháng trước và 51,4% so với cùng kỳ năm trước. Tính chung 10 tháng năm 2026, kim ngạch đạt 499,24 tỷ USD, tăng 27,5% so với cùng kỳ năm trước.
+
+**Giải thích thêm**
+- **Kim ngạch xuất khẩu hàng hóa**: Là tổng giá trị hàng hóa được bán ra nước ngoài trong một khoảng thời gian.
+- **So với tháng trước**: Là phép so sánh số liệu của tháng được nêu với tháng liền kề trước đó.
+- **So với cùng kỳ năm trước**: Là phép so sánh với cùng khoảng thời gian của năm trước.
+
+**Nguồn**
+- Báo cáo tình hình kinh tế – xã hội tháng Mười và 10 tháng năm 2026 (kỳ 2026-10): https://www.nso.gov.vn/bai-top/2026/11/bao-cao-tinh-hinh-kinh-te-xa-hoi-thang-muoi-va-10-thang-nam-2026/",up,,,
+2026-11-17 20:42,2,xếp hạng di nhé,sql,ok,false,"**Trả lời ngắn**
+Xếp hạng theo tổng khối lượng khớp lệnh từ 05/01 đến 10/11/2026 (năm chưa trọn vẹn): 1) HPG — 6.208.286.900; 2) SSI — 5.135.682.600; 3) MBB — 3.781.975.600; 4) VPB — 3.658.851.700; 5) TCB — 2.987.837.700; 6) CTG — 2.128.619.500; 7) FPT — 1.968.133.900; 8) VCB — 1.510.215.000; 9) VHM — 1.456.522.400; 10) BID — 1.375.805.100; 11) MSN — 1.146.099.600; 12) MWG — 1.119.568.000; 13) VNM — 961.418.400; 14) VIC — 890.542.300; 15) GAS — 449.341.100. Các con số là tổng khối lượng khớp lệnh trong giai đoạn có dữ liệu, đến hết ngày 10/11/2026.
+
+**Giải thích thêm**
+- **khối lượng khớp lệnh**: Là số lượng cổ phiếu đã được người mua và người bán giao dịch với nhau.
+- **cổ phiếu**: Là một phần quyền sở hữu trong một công ty được phát hành.
+
+**Nguồn**
+- Bảng `daily_prices`: giá đóng cửa và khối lượng hằng ngày (giá điều chỉnh), nguồn KBS",up,ghi tắt không nhơ cua ai o đâu?,,
+2026-11-17 20:42,2,bây giờ nên bắt đầu đầu tư chứng khoán không,out_of_scope,ok,true,"**Trả lời ngắn**
+Mình không thể khuyên bạn có nên bắt đầu đầu tư chứng khoán hay không. Mình có thể tra cứu dữ liệu lịch sử để bạn tìm hiểu, chẳng hạn: “VN-Index giảm mạnh nhất vào năm nào?”
+
+**Giải thích thêm**
+- **đầu tư chứng khoán**: Đây là việc mua các tài sản như cổ phiếu với kỳ vọng giá trị hoặc khoản thu nhập của chúng tăng lên.
+
+**Dữ liệu mình tra cứu được**
+- Giá cổ phiếu (giá đóng cửa điều chỉnh, khối lượng hằng ngày) từ 05/01/2015 đến 10/11/2026; mã niêm yết sau thì từ ngày niêm yết: BID (BIDV), CTG (VietinBank), FPT (FPT), GAS (PV GAS), HPG (Hòa Phát), MBB (MB), MSN (Masan), MWG (Thế Giới Di Động), SSI (SSI), TCB (Techcombank), VCB (Vietcombank), VHM (Vinhomes), VIC (Vingroup), VNM (Vinamilk), VPB (VPBank).
+- Chỉ số: VN-Index, VN30, HNX-Index (cùng khoảng thời gian).
+- Chỉ tiêu vĩ mô hằng năm của Việt Nam, 2000–2025 (tùy chỉ tiêu), có dự báo tăng trưởng GDP của IMF đến 2031: Lãi suất cho vay; Lạm phát theo giá tiêu dùng; Tăng trưởng GDP; Tăng trưởng GDP thực; Tăng trưởng tiền rộng; Tỷ giá hối đoái chính thức; Tỷ lệ thất nghiệp; Xuất khẩu hàng hóa và dịch vụ; Đầu tư trực tiếp nước ngoài, vốn vào ròng.
+- CPI và lạm phát so với cùng kỳ hằng tháng: 12/2001 – 09/2026.
+- Các lần Ngân hàng Nhà nước đổi lãi suất điều hành: 16/03/2020 – 16/06/2023.
+- Tài liệu: báo cáo kinh tế - xã hội hằng tháng của Cục Thống kê, 11/2025 – 10/2026 (12 tài liệu).
+- Tài liệu: chỉ thị điều hành năm của Ngân hàng Nhà nước, 2026 (1 tài liệu).
+- Tài liệu: họp báo quý của Ngân hàng Nhà nước, Q4/2025 – Q3/2026 (4 tài liệu).",up,,,
+2026-11-17 20:43,2,vốn nhỏ tham gia hàng hoá phái sinh thế nào? làm IB có phải cách tốt,out_of_scope,ok,true,"**Trả lời ngắn**
+Mình chưa có dữ liệu để hướng dẫn tham gia hàng hóa phái sinh hoặc đánh giá làm IB có phù hợp không. Mình có thể tra cứu dữ liệu thị trường chứng khoán; chẳng hạn: “VN-Index giảm mạnh nhất vào năm nào?”
+
+**Dữ liệu mình tra cứu được**
+- Giá cổ phiếu (giá đóng cửa điều chỉnh, khối lượng hằng ngày) từ 05/01/2015 đến 10/11/2026; mã niêm yết sau thì từ ngày niêm yết: BID (BIDV), CTG (VietinBank), FPT (FPT), GAS (PV GAS), HPG (Hòa Phát), MBB (MB), MSN (Masan), MWG (Thế Giới Di Động), SSI (SSI), TCB (Techcombank), VCB (Vietcombank), VHM (Vinhomes), VIC (Vingroup), VNM (Vinamilk), VPB (VPBank).
+- Chỉ số: VN-Index, VN30, HNX-Index (cùng khoảng thời gian).
+- Chỉ tiêu vĩ mô hằng năm của Việt Nam, 2000–2025 (tùy chỉ tiêu), có dự báo tăng trưởng GDP của IMF đến 2031: Lãi suất cho vay; Lạm phát theo giá tiêu dùng; Tăng trưởng GDP; Tăng trưởng GDP thực; Tăng trưởng tiền rộng; Tỷ giá hối đoái chính thức; Tỷ lệ thất nghiệp; Xuất khẩu hàng hóa và dịch vụ; Đầu tư trực tiếp nước ngoài, vốn vào ròng.
+- CPI và lạm phát so với cùng kỳ hằng tháng: 12/2001 – 09/2026.
+- Các lần Ngân hàng Nhà nước đổi lãi suất điều hành: 16/03/2020 – 16/06/2023.
+- Tài liệu: báo cáo kinh tế - xã hội hằng tháng của Cục Thống kê, 11/2025 – 10/2026 (12 tài liệu).
+- Tài liệu: chỉ thị điều hành năm của Ngân hàng Nhà nước, 2026 (1 tài liệu).
+- Tài liệu: họp báo quý của Ngân hàng Nhà nước, Q4/2025 – Q3/2026 (4 tài liệu).",up,,mentions the user's own finances and career plan,
+2026-11-17 20:44,2,"những khoá học, sách về kinh tế cho một người kĩ thuật có thể nhanh nhất làm IB chứng khoán, tham gia thị trường tài chính nói chung",out_of_scope,ok,true,"**Trả lời ngắn**
+Mình chưa thể gợi ý khóa học hoặc sách để nhanh chóng làm IB chứng khoán hay tham gia thị trường tài chính. Bạn có thể hỏi: “VN-Index giảm mạnh nhất vào năm nào?”
+
+**Giải thích thêm**
+- **VN-Index**: VN-Index là chỉ số theo dõi biến động giá của các cổ phiếu trên Sở Giao dịch Chứng khoán TP.HCM.
+
+**Dữ liệu mình tra cứu được**
+- Giá cổ phiếu (giá đóng cửa điều chỉnh, khối lượng hằng ngày) từ 05/01/2015 đến 10/11/2026; mã niêm yết sau thì từ ngày niêm yết: BID (BIDV), CTG (VietinBank), FPT (FPT), GAS (PV GAS), HPG (Hòa Phát), MBB (MB), MSN (Masan), MWG (Thế Giới Di Động), SSI (SSI), TCB (Techcombank), VCB (Vietcombank), VHM (Vinhomes), VIC (Vingroup), VNM (Vinamilk), VPB (VPBank).
+- Chỉ số: VN-Index, VN30, HNX-Index (cùng khoảng thời gian).
+- Chỉ tiêu vĩ mô hằng năm của Việt Nam, 2000–2025 (tùy chỉ tiêu), có dự báo tăng trưởng GDP của IMF đến 2031: Lãi suất cho vay; Lạm phát theo giá tiêu dùng; Tăng trưởng GDP; Tăng trưởng GDP thực; Tăng trưởng tiền rộng; Tỷ giá hối đoái chính thức; Tỷ lệ thất nghiệp; Xuất khẩu hàng hóa và dịch vụ; Đầu tư trực tiếp nước ngoài, vốn vào ròng.
+- CPI và lạm phát so với cùng kỳ hằng tháng: 12/2001 – 09/2026.
+- Các lần Ngân hàng Nhà nước đổi lãi suất điều hành: 16/03/2020 – 16/06/2023.
+- Tài liệu: báo cáo kinh tế - xã hội hằng tháng của Cục Thống kê, 11/2025 – 10/2026 (12 tài liệu).
+- Tài liệu: chỉ thị điều hành năm của Ngân hàng Nhà nước, 2026 (1 tài liệu).
+- Tài liệu: họp báo quý của Ngân hàng Nhà nước, Q4/2025 – Q3/2026 (4 tài liệu).",,,mentions the user's background and career plan,
+2026-11-18 08:59,2,khối ngoại bán ròng hơn 359 tỷ đồng là sao,explain,ok,false,"**Giải thích**
+“Khối ngoại bán ròng hơn 359 tỷ đồng” nghĩa là trong khoảng thời gian được nói đến, nhà đầu tư nước ngoài bán cổ phiếu có giá trị cao hơn giá trị họ mua vào hơn 359 tỷ đồng. Đây là số chênh lệch mua bán, không phải tổng giá trị cổ phiếu họ đã bán và cũng không tự nó cho biết thị trường chắc chắn sẽ giảm.
+
+_Đây là giải thích chung, không lấy từ dữ liệu của app._
+
+Câu hỏi gợi ý: “VN-Index giảm mạnh nhất vào năm nào?”",,,,
+2026-11-18 09:00,2,"Dow giảm khoảng 1,4%, S&P 500 giảm 1,3%, Nasdaq giảm 1,6% còn cái này là gì",explain,ok,false,"**Giải thích**
+Dow, S&P 500 và Nasdaq là các chỉ số chứng khoán của Mỹ, mỗi chỉ số theo dõi một nhóm cổ phiếu khác nhau; Nasdaq thường có nhiều công ty công nghệ hơn. Các tỷ lệ giảm bạn nêu cho biết mỗi chỉ số đã giảm so với mốc so sánh trong khoảng thời gian của bản tin.
+
+_Đây là giải thích chung, không lấy từ dữ liệu của app._
+
+Câu hỏi gợi ý: “Dow, S&P 500 và Nasdaq khác nhau thế nào?”",,,,
+2026-11-18 09:00,2,tại sao vàng thế giới với vietnam chênh nhau nhiều,out_of_scope,ok,true,"**Trả lời ngắn**
+Mình chưa có dữ liệu về giá vàng thế giới và Việt Nam để giải thích mức chênh lệch. Bạn có thể hỏi về lạm phát Việt Nam tháng gần nhất.
+
+**Dữ liệu mình tra cứu được**
+- Giá cổ phiếu (giá đóng cửa điều chỉnh, khối lượng hằng ngày) từ 05/01/2015 đến 10/11/2026; mã niêm yết sau thì từ ngày niêm yết: BID (BIDV), CTG (VietinBank), FPT (FPT), GAS (PV GAS), HPG (Hòa Phát), MBB (MB), MSN (Masan), MWG (Thế Giới Di Động), SSI (SSI), TCB (Techcombank), VCB (Vietcombank), VHM (Vinhomes), VIC (Vingroup), VNM (Vinamilk), VPB (VPBank).
+- Chỉ số: VN-Index, VN30, HNX-Index (cùng khoảng thời gian).
+- Chỉ tiêu vĩ mô hằng năm của Việt Nam, 2000–2025 (tùy chỉ tiêu), có dự báo tăng trưởng GDP của IMF đến 2031: Lãi suất cho vay; Lạm phát theo giá tiêu dùng; Tăng trưởng GDP; Tăng trưởng GDP thực; Tăng trưởng tiền rộng; Tỷ giá hối đoái chính thức; Tỷ lệ thất nghiệp; Xuất khẩu hàng hóa và dịch vụ; Đầu tư trực tiếp nước ngoài, vốn vào ròng.
+- CPI và lạm phát so với cùng kỳ hằng tháng: 12/2001 – 09/2026.
+- Các lần Ngân hàng Nhà nước đổi lãi suất điều hành: 16/03/2020 – 16/06/2023.
+- Tài liệu: báo cáo kinh tế - xã hội hằng tháng của Cục Thống kê, 11/2025 – 10/2026 (12 tài liệu).
+- Tài liệu: chỉ thị điều hành năm của Ngân hàng Nhà nước, 2026 (1 tài liệu).
+- Tài liệu: họp báo quý của Ngân hàng Nhà nước, Q4/2025 – Q3/2026 (4 tài liệu).",,,,
+2026-11-18 11:30,2,đánh giá tình hình lạm phát trên thế giới và cho biết mức độ ảnh hưởng lên VNINDEX,both,ok,true,"**Trả lời ngắn**
+Dữ liệu không có chuỗi lạm phát toàn cầu nên mình chưa thể đánh giá mức độ ảnh hưởng của lạm phát thế giới lên VN-Index. Tại Việt Nam, CPI bình quân 10 tháng năm 2026 tăng 4,57% so với cùng kỳ năm 2025; trong tháng 10, VN-Index giảm 1,53%, từ 1.768,62 điểm ngày 30/09 xuống 1.741,62 điểm ngày 30/10/2026, nhưng dữ liệu không xác định mức giảm này do lạm phát gây ra.
+
+**Giải thích thêm**
+- **lạm phát toàn cầu**: Là mức tăng giá hàng hóa và dịch vụ xét trên phạm vi nhiều quốc gia hoặc toàn thế giới.
+- **CPI**: Là chỉ số giá tiêu dùng, đo sự thay đổi giá của một nhóm hàng hóa và dịch vụ mà người dân thường mua.
+- **so với cùng kỳ**: Là cách so sánh một giai đoạn với đúng giai đoạn đó của năm trước.
+- **VN-Index**: Là chỉ số phản ánh biến động giá cổ phiếu trên sàn giao dịch HOSE.
+
+**Nguồn**
+- Bảng `daily_prices`: giá đóng cửa và khối lượng hằng ngày (giá điều chỉnh), nguồn KBS
+- Báo cáo tình hình kinh tế – xã hội tháng Mười và 10 tháng năm 2026 (kỳ 2026-10): https://www.nso.gov.vn/bai-top/2026/11/bao-cao-tinh-hinh-kinh-te-xa-hoi-thang-muoi-va-10-thang-nam-2026/
+
+**Dữ liệu mình tra cứu được**
+- Giá cổ phiếu (giá đóng cửa điều chỉnh, khối lượng hằng ngày) từ 05/01/2015 đến 10/11/2026; mã niêm yết sau thì từ ngày niêm yết: BID (BIDV), CTG (VietinBank), FPT (FPT), GAS (PV GAS), HPG (Hòa Phát), MBB (MB), MSN (Masan), MWG (Thế Giới Di Động), SSI (SSI), TCB (Techcombank), VCB (Vietcombank), VHM (Vinhomes), VIC (Vingroup), VNM (Vinamilk), VPB (VPBank).
+- Chỉ số: VN-Index, VN30, HNX-Index (cùng khoảng thời gian).
+- Chỉ tiêu vĩ mô hằng năm của Việt Nam, 2000–2025 (tùy chỉ tiêu), có dự báo tăng trưởng GDP của IMF đến 2031: Lãi suất cho vay; Lạm phát theo giá tiêu dùng; Tăng trưởng GDP; Tăng trưởng GDP thực; Tăng trưởng tiền rộng; Tỷ giá hối đoái chính thức; Tỷ lệ thất nghiệp; Xuất khẩu hàng hóa và dịch vụ; Đầu tư trực tiếp nước ngoài, vốn vào ròng.
+- CPI và lạm phát so với cùng kỳ hằng tháng: 12/2001 – 09/2026.
+- Các lần Ngân hàng Nhà nước đổi lãi suất điều hành: 16/03/2020 – 16/06/2023.
+- Tài liệu: báo cáo kinh tế - xã hội hằng tháng của Cục Thống kê, 11/2025 – 10/2026 (12 tài liệu).
+- Tài liệu: chỉ thị điều hành năm của Ngân hàng Nhà nước, 2026 (1 tài liệu).
+- Tài liệu: họp báo quý của Ngân hàng Nhà nước, Q4/2025 – Q3/2026 (4 tài liệu).",,,,
+2026-11-18 11:32,2,"liệu rằng cổ phiếu fdtại việt nam có cơ hội ko, nên vào mã nào",out_of_scope,ok,true,"**Trả lời ngắn**
+Mình không thể xác định cổ phiếu nào bạn nên mua hoặc dự đoán cơ hội sinh lời. Mình có thể giúp xem giá điều chỉnh và diễn biến lịch sử của FPT trong một khoảng thời gian bạn chọn.
+
+**Dữ liệu mình tra cứu được**
+- Giá cổ phiếu (giá đóng cửa điều chỉnh, khối lượng hằng ngày) từ 05/01/2015 đến 10/11/2026; mã niêm yết sau thì từ ngày niêm yết: BID (BIDV), CTG (VietinBank), FPT (FPT), GAS (PV GAS), HPG (Hòa Phát), MBB (MB), MSN (Masan), MWG (Thế Giới Di Động), SSI (SSI), TCB (Techcombank), VCB (Vietcombank), VHM (Vinhomes), VIC (Vingroup), VNM (Vinamilk), VPB (VPBank).
+- Chỉ số: VN-Index, VN30, HNX-Index (cùng khoảng thời gian).
+- Chỉ tiêu vĩ mô hằng năm của Việt Nam, 2000–2025 (tùy chỉ tiêu), có dự báo tăng trưởng GDP của IMF đến 2031: Lãi suất cho vay; Lạm phát theo giá tiêu dùng; Tăng trưởng GDP; Tăng trưởng GDP thực; Tăng trưởng tiền rộng; Tỷ giá hối đoái chính thức; Tỷ lệ thất nghiệp; Xuất khẩu hàng hóa và dịch vụ; Đầu tư trực tiếp nước ngoài, vốn vào ròng.
+- CPI và lạm phát so với cùng kỳ hằng tháng: 12/2001 – 09/2026.
+- Các lần Ngân hàng Nhà nước đổi lãi suất điều hành: 16/03/2020 – 16/06/2023.
+- Tài liệu: báo cáo kinh tế - xã hội hằng tháng của Cục Thống kê, 11/2025 – 10/2026 (12 tài liệu).
+- Tài liệu: chỉ thị điều hành năm của Ngân hàng Nhà nước, 2026 (1 tài liệu).
+- Tài liệu: họp báo quý của Ngân hàng Nhà nước, Q4/2025 – Q3/2026 (4 tài liệu).",,,,
+2026-11-18 11:33,2,Tình hình thị trường cổ phiếu tại Việt Nam,sql,ok,false,"**Trả lời ngắn**
+Dữ liệu mới nhất hiện có là ngày 10/11/2026, chưa có dữ liệu cho ngày 18/11/2026: VN-Index đóng cửa ở 1.743,07 điểm, tăng 1,68% so với phiên giao dịch trước đó, ngày 09/11/2026.
+
+**Giải thích thêm**
+- **VN-Index**: Đây là chỉ số phản ánh biến động giá của nhóm cổ phiếu trên thị trường chứng khoán Việt Nam.
+- **đóng cửa**: Đây là mức chỉ số ghi nhận vào cuối phiên giao dịch trong ngày.
+- **phiên giao dịch**: Đây là khoảng thời gian thị trường chứng khoán mở cửa để mua bán cổ phiếu.
+
+**Nguồn**
+- Bảng `daily_prices`: giá đóng cửa và khối lượng hằng ngày (giá điều chỉnh), nguồn KBS",,,,
+2026-11-18 11:33,2,trả lời đầy đủ,sql,ok,false,"**Trả lời ngắn**
+Ngày 18/11/2026 chưa có dữ liệu trong kết quả; phiên gần nhất là 10/11/2026, so với 09/11, VN-Index đạt 1.743,07 điểm (+1,68%), VN30 đạt 1.860,93 điểm (+1,68%) và HNX-Index đạt 256,26 điểm (+0,4%). Trong các mã cổ phiếu có dữ liệu, giá đóng cửa điều chỉnh và mức tăng/giảm lần lượt là: BID 32.200 đồng (+0,47%), CTG 31.900 (+0,79%), FPT 50.900 (-0,2%), GAS 73.100 (+0,14%), HPG 21.250 (+1,67%), MBB 19.400 (+0,52%), MSN 72.600 (+1,54%), MWG 74.000 (+2,35%), SSI 20.650 (+3,77%), TCB 22.000 (+1,85%), VCB 53.800 (+0,37%), VHM 62.000 (+2,65%), VIC 242.000 (+3,24%), VNM 57.900 (+1,76%) và VPB 22.550 (+1,35%); trong nhóm này, FPT là mã duy nhất giảm.
+
+**Giải thích thêm**
+- **VN-Index**: VN-Index là chỉ số phản ánh biến động giá của các cổ phiếu trên sàn HOSE.
+- **VN30**: VN30 là chỉ số theo dõi biến động giá của 30 cổ phiếu lớn và có tính thanh khoản cao trên HOSE.
+- **HNX-Index**: HNX-Index là chỉ số phản ánh biến động giá cổ phiếu trên sàn HNX.
+- **cổ phiếu**: Cổ phiếu là chứng khoán thể hiện quyền sở hữu một phần của doanh nghiệp phát hành.
+- **giá đóng cửa điều chỉnh**: Đây là giá đã được điều chỉnh để phản ánh các sự kiện như chia cổ tức hoặc thưởng cổ phiếu, nên có thể khác giá hiển thị trên bảng điện.
+- **phiên giao dịch**: Phiên giao dịch là một ngày thị trường chứng khoán mở cửa để mua bán.
+
+**Nguồn**
+- Bảng `daily_prices`: giá đóng cửa và khối lượng hằng ngày (giá điều chỉnh), nguồn KBS",down,,,
